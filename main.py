@@ -1,9 +1,8 @@
 import logging
 
 import numpy as np
-import sqlite3
 
-from simple_vector_db.vector_db import VectorDatabase
+from simple_vector_db.vector_db import VectorDBInMemory, VectorDBSQLite
 from utils.flex_logging import ch
 
 logger = logging.getLogger(__name__)
@@ -11,9 +10,9 @@ logger.addHandler(ch)
 logger.setLevel(logging.INFO)
 
 
-def perform_search():
+def perform_search_in_memory():
     # Create an instance of the VectorDatabase
-    vector_db = VectorDatabase()
+    vector_db = VectorDBInMemory()
 
     # Insert vectors into the database
     vector_db.insert("vector_1", np.array([0.2, 0.2, 0.2]))
@@ -29,39 +28,28 @@ def perform_search():
     retrieved_vector = vector_db.retrieve("vector_1")
     logger.info(f"Retrieved vectors: {retrieved_vector}")
 
-def create_db():
-    conn = sqlite3.connect('vector_db.db')
-    cursor = conn.cursor()
 
-    cursor.execute('CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, data BLOB)')
-    conn.commit()
-    conn.close()
+def perform_search_sqlite():
+    vector_db = VectorDBSQLite()
 
-def save_db():
-    conn = sqlite3.connect('vector_db.db')
-    cursor = conn.cursor()
-    data = np.array([1, 2, 3, 4, 5])
-    data_bytes = data.tobytes()
+    arrays_to_insert = [np.array([1, 2, 3]),
+                        np.array([4, 5, 6]),
+                        np.array([7, 8, 9])]
 
-    cursor.execute('INSERT INTO vectors (data) VALUES (?)', (data_bytes,))
-    conn.commit()
-    conn.close()
+    # Insert vectors into the database
+    vector_db.insert_many(arrays_to_insert)
 
-def retrieve_db():
-    conn = sqlite3.connect('vector_db.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, data FROM vectors WHERE id = ?', (1,))
-    row = cursor.fetchone()
+    # Search for similar vectors
+    query_vector = np.array([0.15, 0.25, 0.35])
+    k_similar_vectors = 5
+    similar_vectors = vector_db.search(query_vector, k=k_similar_vectors)
+    logger.info(f"Most {k_similar_vectors} Similar vectors: {similar_vectors}")
 
-    if row is not None:
-        retrieved_index, retrieved_data = row[0], np.frombuffer(row[1], dtype=np.int64)
-        print('index', retrieved_index)
-        print('data', retrieved_data)
-    conn.close()
+    # Retrieve a specific vector by its key
+    retrieved_vector = vector_db.retrieve(1)
+    logger.info(f"Retrieved vectors: {retrieved_vector}")
 
 
 if __name__ == "__main__":
-    #perform_search()
-    create_db()
-    save_db()
-    retrieve_db()
+    perform_search_in_memory()
+    perform_search_sqlite()
