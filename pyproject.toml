@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "simple-vector-db"
+version = "0.1.0"
+description = ""
+authors = ["Aurelien Massiot <aurelien.massiot@octo.com>", "Philippe Stepniewski <philippe.stepniewski@octo.com>"]
+readme = "README.md"
+packages = [{include = "simple_vector_db"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.25.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
