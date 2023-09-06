@@ -44,7 +44,7 @@ class VectorDBSQLite:
         similarities.sort(key=lambda x: x[1], reverse=True)
         return similarities[:k]
 
-    def retrieve(self, key: str) -> np.ndarray:
+    def retrieve(self, key: int) -> np.ndarray:
         self.cursor.execute('SELECT id, data FROM vectors WHERE id = ?', (key,))
         row = self.cursor.fetchone()
 
@@ -56,45 +56,3 @@ class VectorDBSQLite:
 
     def __del__(self):
         self.conn.close()
-
-# def create_db():
-#     conn = sqlite3.connect('vector_db.db')
-#     cursor = conn.cursor()
-#
-#     cursor.execute('CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, data BLOB)')
-#     conn.commit()
-#     conn.close()
-#
-# def save_db():
-#     conn = sqlite3.connect('vector_db.db')
-#     cursor = conn.cursor()
-#     data = np.array([1, 2, 3, 4, 5])
-#     data_bytes = data.tobytes()
-#
-#     cursor.execute('INSERT INTO vectors (data) VALUES (?)', (data_bytes,))
-#     conn.commit()
-#     conn.close()
-#
-# def save_many_db():
-#     conn = sqlite3.connect('vector_db.db')
-#     cursor = conn.cursor()
-#     arrays_to_insert = [np.array([1, 2, 3]),
-#                         np.array([4, 5, 6]),
-#                         np.array([7, 8, 9])]
-#     data_bytes = [(array.tobytes(),) for array in arrays_to_insert]
-#     cursor.executemany('INSERT INTO vectors (data) VALUES (?)', data_bytes)
-#
-#     conn.commit()
-#     conn.close()
-#
-# def retrieve_db():
-#     conn = sqlite3.connect('vector_db.db')
-#     cursor = conn.cursor()
-#     cursor.execute('SELECT id, data FROM vectors WHERE id = ?', (1,))
-#     row = cursor.fetchone()
-#
-#     if row is not None:
-#         retrieved_index, retrieved_data = row[0], np.frombuffer(row[1], dtype=np.int64)
-#         print('index', retrieved_index)
-#         print('data', retrieved_data)
-#     conn.close()
