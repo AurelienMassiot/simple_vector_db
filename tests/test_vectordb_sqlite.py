@@ -3,7 +3,7 @@ import shutil
 import numpy as np
 import pytest
 
-from simple_vector_db.vector_db import VectorDBSQLite
+from simple_vector_db.vector_db_sqlite import VectorDBSQLite
 
 
 @pytest.fixture
