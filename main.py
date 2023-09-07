@@ -20,7 +20,6 @@ def perform_search_in_memory():
                         np.array([7, 8, 9])]
     vector_db.insert(arrays_to_insert)
 
-
     # Search for similar vectors
     query_vector = np.array([0.15, 0.25, 0.35])
     k_similar_vectors = 5
@@ -35,9 +34,12 @@ def perform_search_in_memory():
 def perform_search_sqlite():
     vector_db = VectorDBSQLite()
 
-    arrays_to_insert = [np.array([1, 2, 3]),
-                        np.array([4, 5, 6]),
-                        np.array([7, 8, 9])]
+    # arrays_to_insert = [np.array([1, 2, 3]),
+    #                     np.array([4, 5, 6]),
+    #                     np.array([7, 8, 9])]
+    num_arrays = 1000000
+    array_shape = (1, 3)
+    arrays_to_insert = [np.random.rand(*array_shape) for _ in range(num_arrays)]
 
     # Insert vectors into the database
     vector_db.insert(arrays_to_insert)
@@ -54,5 +56,5 @@ def perform_search_sqlite():
 
 
 if __name__ == "__main__":
-    perform_search_in_memory()
+    #perform_search_in_memory()
     perform_search_sqlite()
