@@ -41,7 +41,6 @@ def perform_search_sqlite():
 
     # Insert vectors into the database
     vector_db.insert(arrays_to_insert)
-    print('avant', arrays_to_insert[0])
 
     # Search for similar vectors
     query_vector = np.array([1, 2, 3])
@@ -63,15 +62,27 @@ def perform_search_only_sqlite():
     logger.info(f"Most {k_similar_vectors} Similar vectors: {similar_vectors}")
 
 
-def reindex_vectors():
+def create_index():
     vector_db = VectorDBSQLite()
-    df_vectors, df_centroids = vector_db.index(n_clusters=3)
+    df_vectors = vector_db.create_index_kmeans(n_clusters=3)
     logger.info(df_vectors)
-    logger.info(df_centroids)
+
+
+@timeit
+def perform_search_in_index_sqlite():
+    vector_db = VectorDBSQLite()
+    query_vector = np.array([0.15, 0.25, 0.35])
+    k_similar_vectors = 5
+    most_similar_vectors, most_similar_centroid, centroid_similarities = vector_db.search_in_kmeans_index(query_vector,
+                                                                                                          k=k_similar_vectors)
+    logger.info(f"Most {k_similar_vectors} Similar vectors: {most_similar_vectors}")
+    logger.info(f"Most similar centroid: {most_similar_centroid}")
+    logger.info(f"Centroid similarities: {centroid_similarities}")
 
 
 if __name__ == "__main__":
     # perform_search_in_memory()
     #perform_search_sqlite()
-    # perform_search_only_sqlite()
-    reindex_vectors()
+    perform_search_only_sqlite()
+    # create_index()
+    perform_search_in_index_sqlite()
