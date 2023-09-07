@@ -4,7 +4,9 @@ from collections import defaultdict
 from typing import List, Tuple, Optional, Any
 
 import numpy as np
+import pandas as pd
 from numpy import ndarray
+from sklearn.cluster import KMeans
 
 from simple_vector_db.distances import cosine_similarity
 
@@ -69,6 +71,17 @@ class VectorDBSQLite(VectorDB):
             return retrieved_index, retrieved_data
         else:
             return None
+
+    def index(self, n_clusters):
+        self.cursor.execute('SELECT id, data FROM vectors')
+        rows = self.cursor.fetchall()
+        index_and_vectors = [(row[0], np.frombuffer(row[1], dtype=np.int64)) for row in rows]
+        df_vectors = pd.DataFrame(index_and_vectors, columns=['Index', 'Vector'])
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0)
+        df_vectors['Cluster'] = kmeans.fit_predict(list(df_vectors['Vector']))
+        df_centroids = pd.DataFrame(kmeans.cluster_centers_, columns=['x', 'y', 'z'])
+
+        return df_vectors, df_centroids
 
     def __del__(self):
         self.conn.close()
