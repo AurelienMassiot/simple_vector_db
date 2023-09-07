@@ -47,7 +47,7 @@ class VectorDBSQLite(VectorDB):
     def __init__(self):
         self.conn = sqlite3.connect('vector_db.db')
         self.cursor = self.conn.cursor()
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, data BLOB)')
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, data FLOAT)')
 
     def insert(self, vectors_to_insert: list[np.ndarray]) -> None:
         data_bytes = [(array.tobytes(),) for array in vectors_to_insert]
@@ -57,7 +57,7 @@ class VectorDBSQLite(VectorDB):
     def search(self, query_vector: np.ndarray, k: int) -> List[Tuple[str, float]]:
         self.cursor.execute('SELECT id, data FROM vectors')
         rows = self.cursor.fetchall()
-        index_and_vectors = [(row[0], np.frombuffer(row[1], dtype=np.int64)) for row in rows]
+        index_and_vectors = [(self._convert_row(row)) for row in rows]
         similarities = [(vector[0], cosine_similarity(query_vector, vector[1])) for vector in index_and_vectors]
         similarities.sort(key=lambda x: x[1], reverse=True)
         return similarities[:k]
@@ -67,7 +67,7 @@ class VectorDBSQLite(VectorDB):
         row = self.cursor.fetchone()
 
         if row is not None:
-            retrieved_index, retrieved_data = row[0], np.frombuffer(row[1], dtype=np.int64)
+            retrieved_index, retrieved_data = self._convert_row(row)
             return retrieved_index, retrieved_data
         else:
             return None
@@ -75,13 +75,16 @@ class VectorDBSQLite(VectorDB):
     def index(self, n_clusters):
         self.cursor.execute('SELECT id, data FROM vectors')
         rows = self.cursor.fetchall()
-        index_and_vectors = [(row[0], np.frombuffer(row[1], dtype=np.int64)) for row in rows]
+        index_and_vectors = [(self._convert_row(row)) for row in rows]
         df_vectors = pd.DataFrame(index_and_vectors, columns=['Index', 'Vector'])
         kmeans = KMeans(n_clusters=n_clusters, random_state=0)
         df_vectors['Cluster'] = kmeans.fit_predict(list(df_vectors['Vector']))
         df_centroids = pd.DataFrame(kmeans.cluster_centers_, columns=['x', 'y', 'z'])
 
         return df_vectors, df_centroids
+
+    def _convert_row(self, row) -> Tuple[int, ndarray]:
+        return row[0], np.frombuffer(row[1], dtype=np.float64)
 
     def __del__(self):
         self.conn.close()
