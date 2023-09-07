@@ -3,10 +3,11 @@ import logging
 import numpy as np
 
 from simple_vector_db.vector_db import VectorDBInMemory, VectorDBSQLite
-from utils.flex_logging import ch
+from utils.flex_logging import stream_handler
+from utils.timing import timeit
 
 logger = logging.getLogger(__name__)
-logger.addHandler(ch)
+logger.addHandler(stream_handler)
 logger.setLevel(logging.INFO)
 
 
@@ -37,7 +38,7 @@ def perform_search_sqlite():
     # arrays_to_insert = [np.array([1, 2, 3]),
     #                     np.array([4, 5, 6]),
     #                     np.array([7, 8, 9])]
-    num_arrays = 1000000
+    num_arrays = 10000
     array_shape = (1, 3)
     arrays_to_insert = [np.random.rand(*array_shape) for _ in range(num_arrays)]
 
@@ -55,6 +56,16 @@ def perform_search_sqlite():
     logger.info(f"Retrieved vectors: {retrieved_vector}")
 
 
+@timeit
+def perform_search_only_sqlite():
+    vector_db = VectorDBSQLite()
+    query_vector = np.array([0.15, 0.25, 0.35])
+    k_similar_vectors = 5
+    similar_vectors = vector_db.search(query_vector, k=k_similar_vectors)
+    logger.info(f"Most {k_similar_vectors} Similar vectors: {similar_vectors}")
+
+
 if __name__ == "__main__":
-    #perform_search_in_memory()
-    perform_search_sqlite()
+    # perform_search_in_memory()
+    # perform_search_sqlite()
+    perform_search_only_sqlite()
