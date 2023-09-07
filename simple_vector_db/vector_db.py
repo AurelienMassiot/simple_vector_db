@@ -86,7 +86,7 @@ class VectorDBSQLite(VectorDB):
         self.conn.commit()
 
         self.cursor.execute('CREATE TABLE IF NOT EXISTS indexed_vectors_kmeans (id INTEGER PRIMARY KEY, data FLOAT, cluster INTEGER)')
-        index_and_vectors_and_clusters = [(t[0], t[1].tobytes(), v) for t, v in zip(index_and_vectors, kmeans.labels_)]
+        index_and_vectors_and_clusters = [(t[0], t[1].tobytes(), int(v + 1)) for t, v in zip(index_and_vectors, kmeans.labels_)] # v+1 pour avoir des clusters de 1 à n_clusters et pas de 0 à n_clusters-1, car l'insertion sur la primary key va aller de 1 à N-clusters
         self.cursor.executemany('INSERT INTO indexed_vectors_kmeans (id, data, cluster) VALUES (?, ?, ?)', index_and_vectors_and_clusters)
         self.conn.commit()
 
@@ -100,8 +100,8 @@ class VectorDBSQLite(VectorDB):
         centroid_similarities.sort(key=lambda x: x[1], reverse=True)
         most_similar_centroid = centroid_similarities[0][0]
 
-        # self.cursor.execute('SELECT id, data FROM indexed_vectors_kmeans WHERE cluster = ?', (most_similar_centroid,))
-        self.cursor.execute('SELECT id, data, cluster FROM indexed_vectors_kmeans')
+        self.cursor.execute('SELECT id, data FROM indexed_vectors_kmeans WHERE cluster = ?', (most_similar_centroid,))
+        # self.cursor.execute('SELECT id, data FROM indexed_vectors_kmeans')
         rows = self.cursor.fetchall()
         index_and_vectors = [(self._convert_row(row)) for row in rows]
         vectors_similarities = [(vector[0], cosine_similarity(query_vector, vector[1])) for vector in index_and_vectors]

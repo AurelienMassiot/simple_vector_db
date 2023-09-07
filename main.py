@@ -32,7 +32,7 @@ def perform_search_in_memory():
     logger.info(f"Retrieved vectors: {retrieved_vector}")
 
 
-def perform_search_sqlite():
+def insert_and_perform_search_sqlite():
     vector_db = VectorDBSQLite()
 
     num_arrays = 10000
@@ -82,7 +82,7 @@ def perform_search_in_index_sqlite():
 
 if __name__ == "__main__":
     # perform_search_in_memory()
-    #perform_search_sqlite()
+    #insert_and_perform_search_sqlite()
+    #create_index()
     perform_search_only_sqlite()
-    # create_index()
     perform_search_in_index_sqlite()
