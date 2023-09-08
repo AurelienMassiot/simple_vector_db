@@ -89,13 +89,13 @@ class VectorDBSQLite:
             self, query_vector: np.ndarray, k: int
     ) -> Tuple[List[Tuple[int, float]], int]:
         centroids = self.session.query(Centroid).all()
-        most_similar_centroid = self.find_most_similar_centroid(
+        most_similar_centroid_id = self.find_most_similar_centroid(
             query_vector, centroids
         )
 
         indexed_vectors = (
             self.session.query(IndexedVector)
-                .filter_by(cluster=most_similar_centroid)
+                .filter_by(cluster=most_similar_centroid_id)
                 .all()
         )
 
@@ -107,7 +107,7 @@ class VectorDBSQLite:
         similarities.sort(key=lambda x: x[1], reverse=True)
         most_similar_vectors = similarities[:k]
 
-        return most_similar_vectors, most_similar_centroid
+        return most_similar_vectors, most_similar_centroid_id
 
     def find_most_similar_centroid(self, query_vector, centroids) -> int:
         centroid_similarities = [
