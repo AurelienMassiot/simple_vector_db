@@ -10,14 +10,16 @@ logger.addHandler(stream_handler)
 logger.setLevel(logging.INFO)
 
 vector_db = VectorDBInMemory()
-QUERY_VECTOR = np.array([10, 20, 30])
+QUERY_VECTOR = np.array([0.1, 0.2, 0.3])
 K_SIMILAR_VECTORS = 3
 
 
 def perform_search_in_memory():
-    vectors_to_insert = [np.array([10, 20, 30]),
-                         np.array([-1, -2, -3]),
-                         np.array([0.3, 0.3, 0.3])]
+    vectors_to_insert = [
+        np.array([10, 20, 30]),
+        np.array([-1, -2, -3]),
+        np.array([0.3, 0.3, 0.3]),
+    ]
     vector_db.insert(vectors_to_insert)
 
     retrieved_vector = vector_db.retrieve(1)

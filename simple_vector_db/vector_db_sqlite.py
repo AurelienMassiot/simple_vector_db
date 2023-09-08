@@ -12,25 +12,30 @@ from simple_vector_db.vector_db import VectorDB
 
 class VectorDBSQLite(VectorDB):
     def __init__(self):
-        self.conn = sqlite3.connect('vector_db.db')
+        self.conn = sqlite3.connect("vector_db.db")
         self.cursor = self.conn.cursor()
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, data FLOAT)')
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, data FLOAT)"
+        )
 
     def insert(self, vectors_to_insert: list[np.ndarray]) -> None:
         data_bytes = [(array.tobytes(),) for array in vectors_to_insert]
-        self.cursor.executemany('INSERT INTO vectors (data) VALUES (?)', data_bytes)
+        self.cursor.executemany("INSERT INTO vectors (data) VALUES (?)", data_bytes)
         self.conn.commit()
 
     def search(self, query_vector: np.ndarray, k: int) -> List[Tuple[str, float]]:
-        self.cursor.execute('SELECT id, data FROM vectors')
+        self.cursor.execute("SELECT id, data FROM vectors")
         rows = self.cursor.fetchall()
         index_and_vectors = [(self._convert_row(row)) for row in rows]
-        similarities = [(vector[0], cosine_similarity(query_vector, vector[1])) for vector in index_and_vectors]
+        similarities = [
+            (vector[0], cosine_similarity(query_vector, vector[1]))
+            for vector in index_and_vectors
+        ]
         similarities.sort(key=lambda x: x[1], reverse=True)
         return similarities[:k]
 
     def retrieve(self, key: int) -> Optional[tuple[Any, ndarray]]:
-        self.cursor.execute('SELECT id, data FROM vectors WHERE id = ?', (key,))
+        self.cursor.execute("SELECT id, data FROM vectors WHERE id = ?", (key,))
         row = self.cursor.fetchone()
 
         if row is not None:
@@ -40,41 +45,60 @@ class VectorDBSQLite(VectorDB):
             return None
 
     def create_index_kmeans(self, n_clusters):
-        self.cursor.execute('SELECT id, data FROM vectors')
+        self.cursor.execute("SELECT id, data FROM vectors")
         rows = self.cursor.fetchall()
         index_and_vectors = [(self._convert_row(row)) for row in rows]
-        df_vectors = pd.DataFrame(index_and_vectors, columns=['Index', 'Vector'])
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0)
-        df_vectors['Cluster'] = kmeans.fit_predict(list(df_vectors['Vector']))
+        df_vectors = pd.DataFrame(index_and_vectors, columns=["Index", "Vector"])
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init="auto")
+        df_vectors["Cluster"] = kmeans.fit_predict(list(df_vectors["Vector"]))
 
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS centroids_kmeans (id INTEGER PRIMARY KEY, data FLOAT)')
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS centroids_kmeans (id INTEGER PRIMARY KEY, data FLOAT)"
+        )
         data_bytes = [(centroid.tobytes(),) for centroid in kmeans.cluster_centers_]
-        self.cursor.executemany('INSERT INTO centroids_kmeans (data) VALUES (?)', data_bytes)
+        self.cursor.executemany(
+            "INSERT INTO centroids_kmeans (data) VALUES (?)", data_bytes
+        )
         self.conn.commit()
 
         self.cursor.execute(
-            'CREATE TABLE IF NOT EXISTS indexed_vectors_kmeans (id INTEGER PRIMARY KEY, data FLOAT, cluster INTEGER)')
-        index_and_vectors_and_clusters = [(t[0], t[1].tobytes(), int(v + 1)) for t, v in zip(index_and_vectors,
-                                                                                             kmeans.labels_)]  # v+1 pour avoir des clusters de 1 à n_clusters et pas de 0 à n_clusters-1, car l'insertion sur la primary key va aller de 1 à N-clusters
-        self.cursor.executemany('INSERT INTO indexed_vectors_kmeans (id, data, cluster) VALUES (?, ?, ?)',
-                                index_and_vectors_and_clusters)
+            "CREATE TABLE IF NOT EXISTS indexed_vectors_kmeans (id INTEGER PRIMARY KEY, data FLOAT, cluster INTEGER)"
+        )
+        index_and_vectors_and_clusters = [
+            (t[0], t[1].tobytes(), int(v + 1))
+            for t, v in zip(index_and_vectors, kmeans.labels_)
+        ]  # v+1 pour avoir des clusters de 1 à n_clusters et pas de 0 à n_clusters-1, car l'insertion sur la primary key va aller de 1 à N-clusters
+        self.cursor.executemany(
+            "INSERT INTO indexed_vectors_kmeans (id, data, cluster) VALUES (?, ?, ?)",
+            index_and_vectors_and_clusters,
+        )
         self.conn.commit()
 
         return df_vectors
 
-    def search_in_kmeans_index(self, query_vector: np.ndarray, k: int) -> List[Tuple[str, float]]:
-        self.cursor.execute('SELECT id, data FROM centroids_kmeans')
+    def search_in_kmeans_index(
+        self, query_vector: np.ndarray, k: int
+    ) -> List[Tuple[str, float]]:
+        self.cursor.execute("SELECT id, data FROM centroids_kmeans")
         rows = self.cursor.fetchall()
         index_and_vectors = [(self._convert_row(row)) for row in rows]
-        centroid_similarities = [(vector[0], cosine_similarity(query_vector, vector[1])) for vector in
-                                 index_and_vectors]
+        centroid_similarities = [
+            (vector[0], cosine_similarity(query_vector, vector[1]))
+            for vector in index_and_vectors
+        ]
         centroid_similarities.sort(key=lambda x: x[1], reverse=True)
         most_similar_centroid = centroid_similarities[0][0]
 
-        self.cursor.execute('SELECT id, data FROM indexed_vectors_kmeans WHERE cluster = ?', (most_similar_centroid,))
+        self.cursor.execute(
+            "SELECT id, data FROM indexed_vectors_kmeans WHERE cluster = ?",
+            (most_similar_centroid,),
+        )
         rows = self.cursor.fetchall()
         index_and_vectors = [(self._convert_row(row)) for row in rows]
-        vectors_similarities = [(vector[0], cosine_similarity(query_vector, vector[1])) for vector in index_and_vectors]
+        vectors_similarities = [
+            (vector[0], cosine_similarity(query_vector, vector[1]))
+            for vector in index_and_vectors
+        ]
         vectors_similarities.sort(key=lambda x: x[1], reverse=True)
         most_similar_vectors = vectors_similarities[:k]
 

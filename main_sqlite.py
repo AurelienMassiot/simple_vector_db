@@ -25,7 +25,7 @@ def insert_vectors(n_vectors: int, vectors_shape: tuple[int, int]) -> None:
 
 
 @timeit
-def perform_search_no_index():
+def perform_search_without_index():
     similar_vectors = vector_db.search(QUERY_VECTOR, k=K_SIMILAR_VECTORS)
     logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {similar_vectors}")
 
@@ -36,10 +36,12 @@ def create_index():
 
 
 @timeit
-def perform_search_in_index():
-    most_similar_vectors, most_similar_centroid, centroid_similarities = vector_db.search_in_kmeans_index(
-        query_vector=QUERY_VECTOR,
-        k=K_SIMILAR_VECTORS)
+def perform_search_with_index():
+    (
+        most_similar_vectors,
+        most_similar_centroid,
+        centroid_similarities,
+    ) = vector_db.search_in_kmeans_index(query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS)
     logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {most_similar_vectors}")
     logger.info(f"Most similar centroid: {most_similar_centroid}")
     logger.info(f"Centroid similarities: {centroid_similarities}")
@@ -48,5 +50,5 @@ def perform_search_in_index():
 if __name__ == "__main__":
     insert_vectors(N_VECTORS, VECTORS_SHAPE)
     create_index()
-    perform_search_no_index()
-    perform_search_in_index()
+    perform_search_without_index()
+    perform_search_with_index()

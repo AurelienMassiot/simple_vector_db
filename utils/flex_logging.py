@@ -12,7 +12,7 @@ class CustomFormatter(logging.Formatter):
     FORMATS = {
         logging.INFO: green + format + reset,
         logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset
+        logging.ERROR: red + format + reset,
     }
 
     def format(self, record):

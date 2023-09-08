@@ -11,7 +11,7 @@ def vector_db():
     db = VectorDBSQLite()
     yield db
     db.conn.close()
-    shutil.os.remove('vector_db.db')
+    shutil.os.remove("vector_db.db")
 
 
 def test_insert_and_retrieve(vector_db):
@@ -28,7 +28,8 @@ def test_insert_and_retrieve(vector_db):
 
 
 def test_search_with_a_similar_vector_should_return_an_ordered_list_of_vectors_with_first_similarity_equal_to_1(
-        vector_db):
+    vector_db,
+):
     #  Given
     vectors_to_insert = [np.array([1, 2, 3]), np.array([3, 2, 1])]
     vector_db.insert(vectors_to_insert)

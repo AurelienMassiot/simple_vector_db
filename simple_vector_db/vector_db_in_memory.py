@@ -16,7 +16,10 @@ class VectorDBInMemory(VectorDB):
             self.vectors[i] = vectors_to_insert[i]
 
     def search(self, query_vector: np.ndarray, k: int) -> List[Tuple[str, float]]:
-        similarities = [(key, cosine_similarity(query_vector, vector)) for key, vector in self.vectors.items()]
+        similarities = [
+            (key, cosine_similarity(query_vector, vector))
+            for key, vector in self.vectors.items()
+        ]
         # similarities = [(key, euclidean_distance(query_vector, vector)) for key, vector in self.vectors.items()]
         similarities.sort(key=lambda x: x[1], reverse=True)
         return similarities[:k]
