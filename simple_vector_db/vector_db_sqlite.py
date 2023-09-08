@@ -29,7 +29,8 @@ class Centroid(Base):
     id = Column(Integer, primary_key=True)
     data = Column(NumpyArrayAdapter)
 
-    def __init__(self, data):
+    def __init__(self, id, data):
+        self.id = id
         self.data = data
 
 
@@ -71,14 +72,14 @@ class VectorDBSQLite:
 
         return top_similarities
 
-    def create_kmeans_index(self, n_clusters: int):
+    def create_kmeans_index(self, n_clusters: int) -> np.ndarray:
         vectors = self.session.query(Vector).all()
         vector_arrays = [vector.data for vector in vectors]
 
         kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init="auto")
         kmeans.fit_predict(vector_arrays)
-
         centroids = kmeans.cluster_centers_
+
         self.insert_centroids(centroids)
         self.insert_indexed_vectors(vector_arrays, kmeans.labels_)
 
@@ -87,12 +88,9 @@ class VectorDBSQLite:
     def search_in_kmeans_index(
             self, query_vector: np.ndarray, k: int
     ) -> Tuple[List[Tuple[int, float]], int]:
-        centroids_bytes = self.session.query(Centroid).all()
-        centroid_arrays = [
-            centroid.data for centroid in centroids_bytes
-        ]
+        centroids = self.session.query(Centroid).all()
         most_similar_centroid = self.find_most_similar_centroid(
-            query_vector, centroid_arrays
+            query_vector, centroids
         )
 
         indexed_vectors = (
@@ -111,24 +109,24 @@ class VectorDBSQLite:
 
         return most_similar_vectors, most_similar_centroid
 
-    def find_most_similar_centroid(self, query_vector, centroids):
+    def find_most_similar_centroid(self, query_vector, centroids) -> int:
         centroid_similarities = [
-            (idx, cosine_similarity(query_vector, centroid_data))
-            for idx, centroid_data in enumerate(centroids)
+            (centroid.id, cosine_similarity(query_vector, centroid.data))
+            for centroid in centroids
         ]
         centroid_similarities.sort(key=lambda x: x[1], reverse=True)
-        most_similar_centroid = centroid_similarities[0][0]
-        return most_similar_centroid
+        most_similar_centroid_id = centroid_similarities[0][0]
+        return most_similar_centroid_id
 
-    def insert_centroids(self, centroids):
+    def insert_centroids(self, centroids) -> None:
         centroid_objects = [
-            Centroid(data=centroid_coordinates)
-            for centroid_coordinates in centroids
+            Centroid(id=id, data=centroid_coordinates)
+            for id, centroid_coordinates in enumerate(centroids) # because centroids id have to start at O
         ]
         self.session.add_all(centroid_objects)
         self.session.commit()
 
-    def insert_indexed_vectors(self, vectors, clusters):
+    def insert_indexed_vectors(self, vectors, clusters) -> None:
         indexed_vector_objects = [
             IndexedVector(
                 data=vector_coordinates, cluster=int(cluster)
@@ -137,5 +135,3 @@ class VectorDBSQLite:
         ]
         self.session.add_all(indexed_vector_objects)
         self.session.commit()
-
-

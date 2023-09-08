@@ -15,10 +15,10 @@ DB_FILENAME = "vector_db.db"
 vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
 N_VECTORS = 10000
 VECTORS_SHAPE = (1, 3)
-QUERY_VECTOR = np.array([0.15, 0.25, 0.35])
+QUERY_VECTOR = np.array([0.15, 0.25, 0.35]) # should be of same size as vectors shape
 K_SIMILAR_VECTORS = 5
 
-N_CLUSTERS = 3
+N_CLUSTERS = 5
 
 
 def insert_vectors(n_vectors: int, vectors_shape: tuple[int, int]) -> None:
@@ -42,8 +42,8 @@ def perform_search_with_index():
     most_similar_vectors, most_similar_centroid = vector_db.search_in_kmeans_index(
         query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS
     )
-    logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {most_similar_vectors}")
     logger.info(f"Most similar centroid: {most_similar_centroid}")
+    logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {most_similar_vectors}")
 
 
 if __name__ == "__main__":
