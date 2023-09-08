@@ -5,12 +5,16 @@ import pytest
 
 from simple_vector_db.vector_db_sqlite import VectorDBSQLite, Vector
 
-sample_vectors = [np.array([0.1, 0.2, 0.3]), np.array([0.4, 0.5, 0.6]), np.array([0.7, 0.8, 0.9])]
+sample_vectors = [
+    np.array([0.1, 0.2, 0.3]),
+    np.array([0.4, 0.5, 0.6]),
+    np.array([0.7, 0.8, 0.9]),
+]
 
 
 @pytest.fixture
 def vector_db():
-    db_filename = 'test_db.db'
+    db_filename = "test_db.db"
     db = VectorDBSQLite(db_filename)
     yield db
     shutil.os.remove(db_filename)
@@ -70,5 +74,5 @@ def test_search_in_kmeans_index(vector_db):
     assert isinstance(most_similar_centroid, int)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main()

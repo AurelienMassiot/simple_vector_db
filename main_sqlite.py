@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
 logger.setLevel(logging.INFO)
 
-DB_FILENAME = 'vector_db.db'
+DB_FILENAME = "vector_db.db"
 vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
 N_VECTORS = 10000
 VECTORS_SHAPE = (1, 3)
@@ -39,9 +39,12 @@ def create_index():
 
 @timeit
 def perform_search_with_index():
-    most_similar_vectors,most_similar_centroid = vector_db.search_in_kmeans_index(query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS)
+    most_similar_vectors, most_similar_centroid = vector_db.search_in_kmeans_index(
+        query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS
+    )
     logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {most_similar_vectors}")
     logger.info(f"Most similar centroid: {most_similar_centroid}")
+
 
 if __name__ == "__main__":
     insert_vectors(N_VECTORS, VECTORS_SHAPE)
