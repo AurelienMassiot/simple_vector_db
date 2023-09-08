@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 
 DB_FILENAME = 'vector_db.db'
 vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
-N_VECTORS = 1000
+N_VECTORS = 10000
 VECTORS_SHAPE = (1, 3)
 QUERY_VECTOR = np.array([0.15, 0.25, 0.35])
 K_SIMILAR_VECTORS = 5
@@ -28,26 +28,20 @@ def insert_vectors(n_vectors: int, vectors_shape: tuple[int, int]) -> None:
 
 @timeit
 def perform_search_without_index():
-    similar_vectors = vector_db.search(QUERY_VECTOR, k=K_SIMILAR_VECTORS)
+    similar_vectors = vector_db.search_without_index(QUERY_VECTOR, k=K_SIMILAR_VECTORS)
     logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {similar_vectors}")
 
 
 def create_index():
-    df_vectors = vector_db.create_index_kmeans(n_clusters=N_CLUSTERS)
-    logger.info(df_vectors)
+    centroids = vector_db.create_kmeans_index(n_clusters=N_CLUSTERS)
+    logger.info(centroids)
 
 
 @timeit
 def perform_search_with_index():
-    (
-        most_similar_vectors,
-        most_similar_centroid,
-        centroid_similarities,
-    ) = vector_db.search_in_kmeans_index(query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS)
+    most_similar_vectors,most_similar_centroid = vector_db.search_in_kmeans_index(query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS)
     logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {most_similar_vectors}")
     logger.info(f"Most similar centroid: {most_similar_centroid}")
-    logger.info(f"Centroid similarities: {centroid_similarities}")
-
 
 if __name__ == "__main__":
     insert_vectors(N_VECTORS, VECTORS_SHAPE)
