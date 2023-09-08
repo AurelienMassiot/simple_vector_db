@@ -11,9 +11,9 @@ class VectorDBInMemory(VectorDB):
     def __init__(self):
         self.vectors = defaultdict(np.ndarray)
 
-    def insert(self, vectors_to_insert: list[np.ndarray]) -> None:
-        for i in range(len(vectors_to_insert)):
-            self.vectors[i] = vectors_to_insert[i]
+    def insert(self, vectors: list[np.ndarray]) -> None:
+        for i in range(len(vectors)):
+            self.vectors[i] = vectors[i]
 
     def search(self, query_vector: np.ndarray, k: int) -> List[Tuple[str, float]]:
         similarities = [

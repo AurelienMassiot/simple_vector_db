@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class VectorDB(ABC):
     @abstractmethod
-    def insert(self, vectors_to_insert):
+    def insert(self, vectors):
         pass
 
     @abstractmethod

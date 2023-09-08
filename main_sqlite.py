@@ -1,4 +1,5 @@
 import logging
+import shutil
 
 import numpy as np
 
@@ -10,8 +11,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
 logger.setLevel(logging.INFO)
 
-vector_db = VectorDBSQLite()
-N_VECTORS = 10000
+DB_FILENAME = 'vector_db.db'
+vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
+N_VECTORS = 1000
 VECTORS_SHAPE = (1, 3)
 QUERY_VECTOR = np.array([0.15, 0.25, 0.35])
 K_SIMILAR_VECTORS = 5
@@ -52,3 +54,4 @@ if __name__ == "__main__":
     create_index()
     perform_search_without_index()
     perform_search_with_index()
+    shutil.os.remove(DB_FILENAME)
