@@ -91,12 +91,12 @@ class VectorDBSQLite:
     def search_in_kmeans_index(
         self, query_vector: np.ndarray, k: int
     ) -> Tuple[List[Tuple[int, float]], int]:
-        centroids = self.session.query(Centroid).all()
-        centroid_data = [
-            np.frombuffer(centroid.data, dtype=np.float64) for centroid in centroids
+        centroids_bytes = self.session.query(Centroid).all()
+        centroid_arrays = [
+            self._bytes_to_array(centroid.data) for centroid in centroids_bytes
         ]
         most_similar_centroid = self.find_most_similar_centroid(
-            query_vector, centroid_data
+            query_vector, centroid_arrays
         )
 
         indexed_vectors_bytes = (
