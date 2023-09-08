@@ -77,14 +77,14 @@ class VectorDBSQLite:
 
     def create_kmeans_index(self, n_clusters: int):
         vectors = self.session.query(Vector).all()
-        vector_data = [self._bytes_to_array(vector.data) for vector in vectors]
+        vector_arrays = [self._bytes_to_array(vector.data) for vector in vectors]
 
         kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init="auto")
-        kmeans.fit_predict(vector_data)
+        kmeans.fit_predict(vector_arrays)
 
         centroids = kmeans.cluster_centers_
         self.insert_centroids(centroids)
-        self.insert_indexed_vectors(vector_data, kmeans.labels_)
+        self.insert_indexed_vectors(vector_arrays, kmeans.labels_)
 
         return centroids
 
@@ -99,18 +99,18 @@ class VectorDBSQLite:
             query_vector, centroid_data
         )
 
-        indexed_vectors = (
+        indexed_vectors_bytes = (
             self.session.query(IndexedVector)
             .filter_by(cluster=most_similar_centroid)
             .all()
         )
-        indexed_vector_data = [
-            (vector.id, self._bytes_to_array(vector.data)) for vector in indexed_vectors
+        indexed_vector_arrays = [
+            (vector.id, self._bytes_to_array(vector.data)) for vector in indexed_vectors_bytes
         ]
 
         similarities = [
             (vector[0], cosine_similarity(query_vector, vector[1]))
-            for vector in indexed_vector_data
+            for vector in indexed_vector_arrays
         ]
 
         similarities.sort(key=lambda x: x[1], reverse=True)
