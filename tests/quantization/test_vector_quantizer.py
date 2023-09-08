@@ -11,6 +11,16 @@ sample_vectors = [
 
 
 @pytest.fixture
+def sample_high_d_vectors():
+    return [
+        np.array([11.0, 4.0, 2.0, 1.0, 3.0, 5.0, 7.0, 2.0]),
+        np.array([2.0, 4.0, 3.0, 10.0, 4.0, 5.0, 3.0, 2.0]),
+        np.array([3.0, 11.0, 2.0, 1.0, 3.0, 6.0, 3.0, 1.0]),
+        np.array([2.0, 6.0, 2.0, 1.0, 3.0, 5.0, 1.0, 2.0]),
+    ]
+
+
+@pytest.fixture
 def test_vector():
     # Vector of dimension 8 for testing
     return np.array([2.0, 4.0, 2.0, 1.0, 3.0, 5.0, 3.0, 2.0])
@@ -82,13 +92,23 @@ def test_compute_clusters_should_add_to_codebook_correct_clusters_and_ids(test_q
                                                                                                  subspace_index=2)
     res_codebook = test_quantizer.codebook
     # THEN
-    for i,exp_el in enumerate(centroid_0_4):
+    for i, exp_el in enumerate(centroid_0_4):
         assert res_codebook[4][i] == pytest.approx(exp_el)
 
-    for i,exp_el in enumerate(centroid_0_5):
+    for i, exp_el in enumerate(centroid_0_5):
         assert res_codebook[5][i] == pytest.approx(exp_el)
 
 
+def test_quantize_vectors_should_return_quantized_vectors(sample_high_d_vectors):
+    # TODO code review: test plus détaillé?
+    # GIVEN
+    quantizer = VectorQuantizer(m_chunks=4, k_centroids=8)
+    expected_shape = (4, 4) # 4 rows / 4 cols (one per chunk)
+    # WHEN
+    quantized_vectors = quantizer.quantize_vectors(sample_high_d_vectors)
+    # THEN
+    assert quantized_vectors.shape == expected_shape
+    assert len(quantizer.codebook.keys()) == 8
 
 if __name__ == "__main__":
     pytest.main()
