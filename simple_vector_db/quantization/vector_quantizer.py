@@ -32,7 +32,17 @@ class VectorQuantizer:
         predicted_clusters = kmeans.labels_
         predicted_clusters = predicted_clusters + (self.nb_subspace_centroids * subspace_index)
         codebook_labels = np.array(range(0, self.nb_subspace_centroids)) + (self.nb_subspace_centroids * subspace_index)
-        logger.info(centroids)
         for i, el in enumerate(centroids):
             self.codebook[codebook_labels[i]] = el
         return centroids, predicted_clusters, codebook_labels
+
+    def quantize_vectors(self, input_vectors: list[np.array]):
+        input_vectors_matrix = np.array(input_vectors)
+        chunks = np.split(input_vectors_matrix, self.m_chunks, axis=1)
+        quantized_vector = []
+        for i, chunk in enumerate(chunks):
+            centroids, predicted_clusters, codebook_labels = self.compute_clusters_on_subspace(chunk, i)
+            quantized_vector.append(predicted_clusters)
+
+        logger.info(self.codebook)
+        return np.array(quantized_vector).T
