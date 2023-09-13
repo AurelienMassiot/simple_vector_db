@@ -3,10 +3,11 @@ import logging
 from utils.flex_logging import stream_handler
 from sklearn.cluster import KMeans
 from typing import Dict
+from simple_vector_db.config import LOGGING_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(LOGGING_LEVEL)
 
 
 class VectorQuantizer:
@@ -38,11 +39,20 @@ class VectorQuantizer:
 
     def quantize_vectors(self, input_vectors: list[np.array]):
         input_vectors_matrix = np.array(input_vectors)
+        vector_dimension = input_vectors[0].shape[0]
+        if vector_dimension % self.m_chunks != 0:
+            logger.error(f"The vector's dimension {vector_dimension} is not divisible by {self.m_chunks}")
         chunks = np.split(input_vectors_matrix, self.m_chunks, axis=1)
         quantized_vector = []
         for i, chunk in enumerate(chunks):
             centroids, predicted_clusters, codebook_labels = self.compute_clusters_on_subspace(chunk, i)
             quantized_vector.append(predicted_clusters)
 
-        logger.info(self.codebook)
         return np.array(quantized_vector).T
+
+    def rebuild_vector(self, input_vector: np.array):
+        rebuilt_vector = np.array([])
+        for chunk in input_vector:
+            rebuilt_chunk = self.codebook[chunk]
+            rebuilt_vector = np.append(rebuilt_vector, rebuilt_chunk)
+        return rebuilt_vector
