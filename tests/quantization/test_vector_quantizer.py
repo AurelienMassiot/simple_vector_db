@@ -110,5 +110,16 @@ def test_quantize_vectors_should_return_quantized_vectors(sample_high_d_vectors)
     assert quantized_vectors.shape == expected_shape
     assert len(quantizer.codebook.keys()) == 8
 
+def test_rebuild_vector_should_return_vector_correct_shape(sample_high_d_vectors):
+    # GIVEN
+    quantizer = VectorQuantizer(m_chunks=4, k_centroids=8)
+    expected_shape = (8,)
+    # WHEN
+    quantized_vectors = quantizer.quantize_vectors(sample_high_d_vectors)
+    rebuilt_vector = quantizer.rebuild_vector(quantized_vectors[0])
+    # THEN
+    assert rebuilt_vector.shape == expected_shape
+
+
 if __name__ == "__main__":
     pytest.main()
