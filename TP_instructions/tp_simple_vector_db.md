@@ -432,3 +432,198 @@ if __name__ == "__main__":
 ```
 
 Vous pouvez désormais lancer le script et voir le temps d'exécution de la recherche sans index. N'hésitez pas à changer les valeurs du vecteur de requête, les dimensions, le nombre de vecteurs similaires à retourner, etc.
+
+## Création d'un index pour accélérer la recherche des vecteurs les plus similaires
+Nous allons désormais créer un index pour accélérer la recherche des vecteurs les plus similaires.
+
+Pour cela, nous allons ajouter une méthode `create_kmeans_index` à notre classe `VectorDBSQLite`. Cette méthode va créer des clusters avec la méthode Kmeans en se basant sur la colonne `data` de nos vecteurs.  
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+from sklearn.cluster import KMeans
+
+class VectorDBSQLite():
+    ...
+    def create_kmeans_index(self, n_clusters: int) -> np.ndarray:
+        vectors = self.session.query(Vector).all()
+        vector_arrays = [vector.data for vector in vectors]
+
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init="auto")
+        kmeans.fit_predict(vector_arrays)
+        centroids = kmeans.cluster_centers_
+
+        self.insert_centroids(centroids)
+        self.insert_indexed_vectors(vector_arrays, kmeans.labels_)
+
+        return centroids
+
+
+```
+
+Il faut donc créer deux nouvelles méthodes `insert_centroids` et `insert_indexed_vectors` qui vont insérer les centroids et les vecteurs indexés dans la base de données.  
+Créons d'abord deux nouvelles classes Centroid et IndexedVector. Les centroïdes ont un id et des coordonnées ; les vecteurs indexés ont un id, des coordonnées et un cluster d'appartenance.  
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+
+class Centroid(Base):
+    __tablename__ = "centroids"
+
+    id = Column(Integer, primary_key=True)
+    data = Column(NumpyArrayAdapter)
+
+    def __init__(self, id, data):
+        self.id = id
+        self.data = data
+
+
+class IndexedVector(Base):
+    __tablename__ = "indexed_vectors"
+
+    id = Column(Integer, primary_key=True)
+    data = Column(NumpyArrayAdapter)
+    cluster = Column(Integer)
+
+    def __init__(self, data, cluster):
+        self.data = data
+        self.cluster = cluster
+```
+
+Les méthodes `insert_centroids` et `insert_indexed_vectors` de la classe VectorDBSQLite sont assez similaires à la méthode `insert` que nous avons implémentée plus tôt.
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+
+class VectorDBSQLite():
+    ...
+    def insert_centroids(self, centroids) -> None:
+        centroid_objects = [
+            Centroid(id=id, data=centroid_coordinates)
+            for id, centroid_coordinates in enumerate(centroids)  # because centroids id have to start at O
+        ]
+        self.session.add_all(centroid_objects)
+        self.session.commit()
+
+    def insert_indexed_vectors(self, vectors, clusters) -> None:
+        indexed_vector_objects = [
+            IndexedVector(
+                data=vector_coordinates, cluster=int(cluster)
+            )
+            for vector_coordinates, cluster in zip(vectors, clusters)
+        ]
+        self.session.add_all(indexed_vector_objects)
+        self.session.commit()
+```
+
+## Création de la méthode de recherche des vecteurs les plus similaires avec index
+
+Nous allons désormais pouvoir implémenter la méthode `search_in_kmeans_index` de notre classe `VectorDBSQLite`. Cette méthode va prendre en entrée un vecteur de requête et un nombre `k` et va retourner les `k` vecteurs les plus similaires à la requête.  
+
+Il suffit alors de requêter la base de données pour récupérer les centroïdes, de trouver le centroïde le plus proche de la requête, de récupérer les vecteurs indexés appartenant à ce cluster et de calculer la similarité entre la requête et ces vecteurs.  
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+class VectorDBSQLite():
+    ...
+    def search_in_kmeans_index(
+            self, query_vector: np.ndarray, k: int
+    ) -> Tuple[List[Tuple[int, float]], int]:
+        centroids = self.session.query(Centroid).all()
+        most_similar_centroid_id = self.find_most_similar_centroid(
+            query_vector, centroids
+        )
+
+        indexed_vectors = (
+            self.session.query(IndexedVector)
+            .filter_by(cluster=most_similar_centroid_id)
+            .all()
+        )
+
+        similarities = [
+            (indexed_vector.id, cosine_similarity(query_vector, indexed_vector.data))
+            for indexed_vector in indexed_vectors
+        ]
+
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        most_similar_vectors = similarities[:k]
+
+        return most_similar_vectors, most_similar_centroid_id
+
+    def find_most_similar_centroid(self, query_vector, centroids) -> int:
+        centroid_similarities = [
+            (centroid.id, cosine_similarity(query_vector, centroid.data))
+            for centroid in centroids
+        ]
+        centroid_similarities.sort(key=lambda x: x[1], reverse=True)
+        most_similar_centroid_id = centroid_similarities[0][0]
+        return most_similar_centroid_id
+
+```
+
+## Test de l'implémentation de la base de données vecteurs SQLite avec index
+
+Retournons désormais dans notre fichier `main_sqlite.py` pour tester notre implémentation.
+
+```python
+# main_sqlite.py
+
+import logging
+import shutil
+
+import numpy as np
+
+from simple_vector_db.vector_db_sqlite import VectorDBSQLite
+from utils.flex_logging import stream_handler
+from utils.timing import timeit
+
+logger = logging.getLogger(__name__)
+logger.addHandler(stream_handler)
+logger.setLevel(logging.INFO)
+
+DB_FILENAME = "vector_db.db"
+vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
+N_VECTORS = 10000
+VECTORS_SHAPE = (1, 3)
+QUERY_VECTOR = np.array([0.15, 0.25, 0.35]) # should be of same size as vectors shape
+K_SIMILAR_VECTORS = 5
+
+N_CLUSTERS = 5
+
+
+def insert_vectors(n_vectors: int, vectors_shape: tuple[int, int]) -> None:
+    vectors_to_insert = [np.random.rand(*vectors_shape) for _ in range(n_vectors)]
+    vector_db.insert(vectors_to_insert)
+
+
+@timeit
+def perform_search_without_index():
+    similar_vectors = vector_db.search_without_index(QUERY_VECTOR, k=K_SIMILAR_VECTORS)
+    logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {similar_vectors}")
+
+
+def create_index():
+    centroids = vector_db.create_kmeans_index(n_clusters=N_CLUSTERS)
+    logger.info(centroids)
+
+
+@timeit
+def perform_search_with_index():
+    most_similar_vectors, most_similar_centroid = vector_db.search_in_kmeans_index(
+        query_vector=QUERY_VECTOR, k=K_SIMILAR_VECTORS
+    )
+    logger.info(f"Most similar centroid: {most_similar_centroid}")
+    logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {most_similar_vectors}")
+
+
+if __name__ == "__main__":
+    insert_vectors(N_VECTORS, VECTORS_SHAPE)
+    create_index()
+    perform_search_without_index()
+    perform_search_with_index()
+    shutil.os.remove(DB_FILENAME)
+
+```
+
+Félicitations, vous pouvez remarquer que la recherche avec index est beaucoup plus rapide que la recherche sans index !
+
+![Run de l'implémentation de la base de données vecteurs SQLite avec index Kmeans](images/run_main_sqlite_with_index_kmeans.png "Run de l'implémentation de la base de données vecteurs SQLite avec index Kmeans")
