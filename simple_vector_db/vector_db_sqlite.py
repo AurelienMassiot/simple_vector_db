@@ -4,7 +4,7 @@ from typing import List, Tuple
 import numpy as np
 from sklearn.cluster import KMeans
 from sqlalchemy import create_engine, Column, Integer
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from simple_vector_db.distances import cosine_similarity
@@ -21,6 +21,17 @@ class Vector(Base):
 
     def __init__(self, data):
         self.data = data
+
+
+class Mapping(Base):
+    __tablename__ = "id_map"
+
+    id = Column(Integer, primary_key=True)
+    external_id = Column(Integer)
+
+    def __init__(self, id, external_id):
+        self.id = id
+        self.external_id = external_id
 
 
 class Centroid(Base):
@@ -53,10 +64,22 @@ class VectorDBSQLite:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    def insert(self, vectors: list[np.ndarray]) -> None:
+    def insert(self, vectors: list[np.ndarray], vector_ids: list[int] = None) -> None:
         vector_objects = [Vector(data=array) for array in vectors]
         self.session.add_all(vector_objects)
         self.session.commit()
+        if vector_ids is not None:
+            self.create_id_map(vector_objects, vector_ids)
+
+    def create_id_map(self, inserted_objects: list[Vector], vector_ids: list[int]):
+        mapping_to_insert = [Mapping(vector.id, ext_id) for vector, ext_id in zip(inserted_objects, vector_ids)]
+        self.session.add_all(mapping_to_insert)
+        self.session.commit()
+
+    def search_mapping_id(self, external_id: int):
+        result_mapping_id = self.session.query(Mapping).filter_by(external_id=external_id).all()
+        ids = [mapping.id for mapping in result_mapping_id]
+        return ids
 
     def search_without_index(
             self, query_vector: np.ndarray, k: int
@@ -71,6 +94,13 @@ class VectorDBSQLite:
         top_similarities = similarities[:k]
 
         return top_similarities
+
+    def search_with_id(self, query_id: int):
+        vectors = self.session.query(Vector).filter_by(id=query_id).all()
+        if len(vectors) > 0:
+            return vectors[0]
+        else:
+            return None
 
     def create_kmeans_index(self, n_clusters: int) -> np.ndarray:
         vectors = self.session.query(Vector).all()
@@ -95,8 +125,8 @@ class VectorDBSQLite:
 
         indexed_vectors = (
             self.session.query(IndexedVector)
-                .filter_by(cluster=most_similar_centroid_id)
-                .all()
+            .filter_by(cluster=most_similar_centroid_id)
+            .all()
         )
 
         similarities = [
@@ -121,7 +151,7 @@ class VectorDBSQLite:
     def insert_centroids(self, centroids) -> None:
         centroid_objects = [
             Centroid(id=id, data=centroid_coordinates)
-            for id, centroid_coordinates in enumerate(centroids) # because centroids id have to start at O
+            for id, centroid_coordinates in enumerate(centroids)  # because centroids id have to start at O
         ]
         self.session.add_all(centroid_objects)
         self.session.commit()
