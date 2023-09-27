@@ -16,9 +16,10 @@ L'objectif de ce TP est créer une simple base de données de vecteurs, comme d�
 Bien évidemment, le but ici n'est pas de créer une base de données performante utilisable en production, mais plutôt de l'implémenter pas à pas pour en décortiquer chaque brique.
 
 ## Installation des dépendances
-Dans un premier temps, nous allons installer le dépendances nécessaires à notre projet. Pour cela, installez `scikit-learn`, `numpy` et `sqlalchemy` dans votre environnement Python. Il y a plusieurs façon de le faire : Conda, Pipenv, Poetry, etc. Libre à vous d'utiliser la méthode qu vous préférez. Ici, allons utiliser Poetry en créant un fichier pyproject.toml et en y ajoutant les dépendances nécessaires :
+Dans un premier temps, nous allons installer le dépendances nécessaires à notre projet. Pour cela, installez `scikit-learn`, `numpy` et `sqlalchemy` dans votre environnement Python. Il y a plusieurs façosn de le faire : Conda, Pipenv, Poetry, etc. Libre à vous d'utiliser la méthode que vous préférez. Ici, nous allons utiliser Poetry en créant un fichier `pyproject.toml` et en y ajoutant les dépendances nécessaires :
 
 ```toml
+# pyproject.toml
 [tool.poetry]
 name = "simple-vector-db"
 version = "0.1.0"
@@ -169,6 +170,23 @@ Pour cela, nous allons créer une base de données vecteurs en mémoire, y insé
 N'hésitez pas à changer les valeurs des vecteurs (les vecteurs insérés `vectors_to_insert` au préalable et le vecteur de requête `QUERY_VECTOR`).
 
 Notez l'import de notre librairie de logging et l'utilisation de notre handler `stream_handler` pour afficher les logs dans la console.
+
+A ce stade, l'arborescence de notre projet devrait ressembler à cela :
+
+```texte simple
+    .
+    └── simple_vector_db
+        ├── simple_vector_db
+        | ├── __init__.py
+        | ├── distances.py
+        | ├── vector_db.py
+        | ├── vector_db_in_memory.py
+        ├── utils
+        | ├── flex_logging.py
+        poetry.lock
+        pyproject.toml
+        main_in_memory.py
+```
 
 ```python
 # main_in_memory.py
