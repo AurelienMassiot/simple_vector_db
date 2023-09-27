@@ -230,5 +230,164 @@ Nous pouvons voir que les k vecteurs les plus similaires ont été retournés, o
 
 ![Run de l'implémentation de la base de données vecteurs en mémoire](images/run_main_in_memory.png "Run de l'implémentation de la base de données vecteurs en mémoire")
 
+Nous allons désormais passer aux choses sérieuses et implémenter une base de données vecteurs persistante.
+
+## Ajout d'un décorateur pour mesurer le temps d'exécution
+Avant d'implémenter notre base de données persistante, nous allons d'abord créer un petit utilitaire nous permettant de mesurer le temps d'exécution de nos méthodes. Pour cela, nous allons créer un fichier `utils/timer.py` et y créer un décorateur `timer` qui prend en entrée une fonction et retourne une fonction qui mesure le temps d'exécution de la fonction passée en entrée.  
+Créez un fichier `utils/timing.py` et implémentez le décorateur `timer` :
+
+```python
+import logging
+import time
+from functools import wraps
+
+from utils.flex_logging import stream_handler
+
+logger = logging.getLogger(__name__)
+logger.addHandler(stream_handler)
+logger.setLevel(logging.INFO)
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        logger.info(
+            f"Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds"
+        )
+        return result
+
+    return timeit_wrapper
+```
+
+## Premiers objets avec SQLite et SQLAlchemy
+Nous allons maintenant créer une base de données SQLite avec SQLAlchemy. SQLAlchemy va grandement nous faciliter la tâche en tant qu'ORM. Pour cela, nous allons créer un fichier `simple_vector_db/vector_db_sqlite.py` et y créer une classe `VectorDBSQLite`.  
+L'initialisation de cet objet va nous permettre d'instancier la connexion à la base de données SQLite : 
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
+Base = declarative_base()
+
+class VectorDBSQLite():
+    def __init__(self, db_filename: str):
+        self.engine = create_engine(f"sqlite:///{db_filename}", connect_args={'detect_types': sqlite3.PARSE_DECLTYPES})
+        Base.metadata.create_all(self.engine)
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+```
+
+Dans ce même fichier, nous allons ajouter une classe Vector qui va nous permettre de représenter un vecteur dans notre base de données. Cette classe va hériter de la classe `Base` de SQLAlchemy et va contenir un attribut `id` qui sera la clé primaire de notre table et un attribut `vector` qui sera le vecteur stocké dans la base de données.  
+
+```python
+
+from sqlalchemy import  Column, Integer
+from simple_vector_db.numpy_array_adapter import NumpyArrayAdapter
+
+class Vector(Base):
+    __tablename__ = "vectors"
+
+    id = Column(Integer, primary_key=True)
+    data = Column(NumpyArrayAdapter)
+
+    def __init__(self, data):
+        self.data = data
+```
+
+Nous pouvons voir qu'ici, notre vecteur est de type NumpyArrayAdapter, et qu'il est importé depuis `simple_vector_db.numpy_array_adapter`. Ce fichier n'existe pas ? C'est normal, nous allons le créer tout de suite.  
+
+## Implémentation d'un adaptateur SQLite pour les vecteurs Numpy
+Il n'est pas possible de base de stocker des vecteurs Numpy dans une base de données SQLite. Pour cela, nous allons créer un adaptateur qui va nous permettre de convertir nos vecteurs Numpy en un type que SQLite peut stocker. Pour cela, nous allons créer un fichier `simple_vector_db/numpy_array_adapter.py` et y créer une classe `NumpyArrayAdapter` qui va hériter de la classe `types.TypeDecorator` de SQLAlchemy.  
+
+```python
+# simple_vector_db/numpy_array_adapter.py
+
+import numpy as np
+from sqlalchemy import types
+
+
+class NumpyArrayAdapter(types.TypeDecorator):
+    impl = types.LargeBinary
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return value.tobytes()
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return np.frombuffer(value, dtype=np.float64)
+```
+
+## Création de la méthode d'insertion des vecteurs
+
+Nous allons désormais pouvoir insérer des vecteurs dans notre base de données. Pour cela, nous allons ajouter une méthode `insert` à notre classe `VectorDBSQLite`. Cette méthode va prendre en entrée une liste de vecteurs et va les insérer dans la base de données.  
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+class VectorDBSQLite():
+    ... 
+    
+    def insert(self, vectors: list[np.ndarray], vector_ids: list[int] = None) -> None:
+        vector_objects = [Vector(data=array) for array in vectors]
+        self.session.add_all(vector_objects)
+        self.session.commit()
+```
+
+On peut créer un script `main_sqlite.py` pour tester une insertion. Nous allons créer une base de données SQLite dans un fichier `vector_db.db` et y insérer 1000 vecteurs de dimension (1, 3).  
+
+```python
+# main_sqlite.py
+
+import numpy as np
+from simple_vector_db.vector_db_sqlite import VectorDBSQLite
+
+DB_FILENAME = "vector_db.db"
+vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
+
+N_VECTORS = 1000
+VECTORS_SHAPE = (1, 3)
+
+def insert_vectors(n_vectors: int, vectors_shape: tuple[int, int]) -> None:
+    vectors_to_insert = [np.random.rand(*vectors_shape) for _ in range(n_vectors)]
+    vector_db.insert(vectors_to_insert)
+
+if __name__ == "__main__":
+    insert_vectors(N_VECTORS, VECTORS_SHAPE)
+```
+
+## Création de la méthode de recherche des vecteurs les plus similaires
+
+Nous allons maintenant implémenter la méthode `search` de notre classe `VectorDBSQLite`. Cette méthode va prendre en entrée un vecteur de requête et un nombre `k` et va retourner les `k` vecteurs les plus similaires à la requête.  
+
+```python
+# simple_vector_db/vector_db_sqlite.py
+from typing import List, Tuple
+from simple_vector_db.distances import cosine_similarity
+
+class VectorDBSQLite():
+    ...
+    
+    def search_without_index(self, query_vector: np.ndarray, k: int) -> List[Tuple[int, float]]:
+        vectors = self.session.query(Vector).all()
+
+        similarities = [
+            (vector.id, cosine_similarity(query_vector, vector.data))
+            for vector in vectors
+        ]
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        top_similarities = similarities[:k]
+
+        return top_similarities
+```
+
+De même que tout à l'heure avec l'implémentation en mémoire, il est possible de changer la distance utilisée pour la recherche. Ici, nous utilisons la similarité cosinus.
 
 ##
+
+
