@@ -1,105 +1,36 @@
-summary: TP0 - Setup de l'environnement de travail
-id: tp0
+summary: TP Simple Vector DB
+id: tp_simple_vector_db
 categories: setup
 tags: setup
 status: Published
 authors: OCTO Technology
-Feedback Link: https://github.com/octo-technology/Formation-MLOps-1/issues/new/choose
+Feedback Link: https://github.com/AurelienMassiot/simple_vector_db/issues/new
 
-# TP0 - Préparation de l'environnement de travail
+# TP0 - Implémenter une base de données vecteurs from scratch
 
 ## Vue d'ensemble
 
 Duration: 0:01:00
 
-L'objectif de ce TP est de setup votre environnement de travail pour pouvoir développer efficacement un projet de DS.
+L'objectif de ce TP est créer une simple base de données de vecteurs, comme décrit dans notre article <TODO>.
+Bien évidemment, le but ici n'est pas de créer une base de données performante utilisable en production, mais plutôt de l'implémenter pas à pas pour en décortiquer chaque brique.
 
-Tel l'artisan, le _craftsman_ Data Scientist doit maitriser ses outils
+## Création d'une classe abstraite Vector DB
+Dans un premier temps, nous allons créer un fichier `vector_db.py` et y créer une classe abstraite VectorDB. Cette classe abstraite contiendra les méthodes `insert`, `search` `retrieve` que nous allons implémenter dans les prochaines parties.
 
-## Récupérer le projet sur GitHub
+```python
+from abc import ABC, abstractmethod
 
-Duration: 0:03:00
+class VectorDB(ABC):
+    @abstractmethod
+    def insert(self, vectors):
+        pass
 
-Cloner le repository avec la commande suivante : 
+    @abstractmethod
+    def search(self, query_vector, k):
+        pass
 
-```sh
-git clone git@github.com:octo-technology/Formation-MLOps-1.git
+    @abstractmethod
+    def retrieve(self, key):
+        pass
 ```
-
-NB : Si vous êtes sur Windows, vous aurez besoin de l'utilitaire [Git for windows](https://gitforwindows.org/)
-
-## Ouvrir PyCharm et le configurer
-
-Duration: 0:03:00
-
-Ouvrir le projet sur PyCharm
-
-Si vous êtes sous Windows, configurez votre terminal dans PyCharm afin de pouvoir exécuter toutes les commandes :
-
-- Allez dans Paramètres > Outils > Terminal
-- Modifiez le "Shell path" par : `cmd.exe "/K" "C:\Users\>>me<<Miniconda3\Scripts\activate.bat"`
-- Redémarrer Pycharm
-- Testez-le en tapant `git` dans le terminal
-
-
-## Créer un environment conda
-Duration: 0:10:00
-Assurez vous d'avoir miniconda or anaconda installé. Si non, installez le.
-
-Positionnez-vous dans le dossier de la formation
-
-```sh
-cd Formation-MLOps-1
-```
-
-Créer un environnement conda avec la commande suivante
-
-```sh
-conda create -n formation_mlops_1 python=3.10
-```
-
-Une fois créé, vous pouvez l'activer : 
-
-```sh
-conda activate formation_mlops_1
-```
-
-Puis installer les dépendances requises
-
-```sh
-pip install -r requirements.txt
-```
-
-## Ouvrir un notebook
-Duration: 0:03:00
-
-Dans le terminal taper la commande : 
-
-```sh
-jupyter-notebook
-```
-
-Si l'environnement `formation_mlops_1` n'est pas disponible dans l'interface `jupyter` :
-
-- Quittez jupyter-notebook avec un <kbd>ctrl</kbd>+<kbd>c</kbd> dans le terminal
-- Lancer `ipython kernel install --name "PythonIndus" --user`
-- Relancer `jupyter-notebook`
-
-## Comment suivre ce TP
-
-Duration: 0:03:00
-
-
-Elle est fortement liée à la présentation de la formation.
-
-Pour naviguer entre les étapes, changez de branche.
-
-Pour voir toutes les branches
-```sh
-git branch -a
-```
-## Lien vers le TP suivant
-
-Duration: 0:01:00
-
-Les instructions du TP suivant sont [ici](https://octo-technology.github.io/Formation-MLOps-1/tp1#0)
