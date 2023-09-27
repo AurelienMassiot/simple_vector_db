@@ -15,8 +15,36 @@ Duration: 0:01:00
 L'objectif de ce TP est créer une simple base de données de vecteurs, comme décrit dans notre article <TODO>.
 Bien évidemment, le but ici n'est pas de créer une base de données performante utilisable en production, mais plutôt de l'implémenter pas à pas pour en décortiquer chaque brique.
 
+## Installation des dépendances
+Dans un premier temps, nous allons installer le dépendances nécessaires à notre projet. Pour cela, installez `scikit-learn`, `numpy` et `sqlalchemy` dans votre environnement Python. Il y a plusieurs façon de le faire : Conda, Pipenv, Poetry, etc. Libre à vous d'utiliser la méthode qu vous préférez. Ici, allons utiliser Poetry en créant un fichier pyproject.toml et en y ajoutant les dépendances nécessaires :
+
+```toml
+[tool.poetry]
+name = "simple-vector-db"
+version = "0.1.0"
+description = ""
+authors = ["Aurelien Massiot <aurelien.massiot@octo.com>", "Philippe Stepniewski <philippe.stepniewski@octo.com>"]
+readme = "README.md"
+packages = [{include = "simple_vector_db"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.25.2"
+scikit-learn = "^1.3.0"
+sqlalchemy = "^2.0.20"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.1"
+black = "^23.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+```
+
 ## Création d'une classe abstraite Vector DB
-Dans un premier temps, nous allons créer un package `simple_vector_db` qui contiendra un certain nombre de fichiers python. N'oubliez donc pas d'y créer un fichier `__init__.py`!
+Nous allons créer un package `simple_vector_db` qui contiendra un certain nombre de fichiers python. N'oubliez donc pas d'y créer un fichier `__init__.py`!
 
 Maintenant, nous allons créer un fichier `vector_db.py` et y créer une classe abstraite VectorDB. Cette classe abstraite contiendra les méthodes `insert`, `search` et `retrieve` que nous allons implémenter dans les prochaines parties.
 
@@ -179,7 +207,7 @@ if __name__ == "__main__":
     perform_search_in_memory()
 ```
 
-Et tadaaa !
+Et tadaaa !  
 Nous pouvons voir que les k vecteurs les plus similaires ont été retournés, ordonnés par ordre décroissant de similarité.
 
 ![Run de l'implémentation de la base de données vecteurs en mémoire](images/run_main_in_memory.png "Run de l'implémentation de la base de données vecteurs en mémoire")
