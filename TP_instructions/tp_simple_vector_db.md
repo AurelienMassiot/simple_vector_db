@@ -388,6 +388,47 @@ class VectorDBSQLite():
 
 De même que tout à l'heure avec l'implémentation en mémoire, il est possible de changer la distance utilisée pour la recherche. Ici, nous utilisons la similarité cosinus.
 
-##
+## Test de l'implémentation de la base de données vecteurs SQLite sans index 
+Nous pouvons retourner sur notre fichier `main_sqlite.py` et tester la recherche de vecteurs similaires. Pour cela, nous allons utiliser le décorateur `timeit` que nous avons créé plus tôt pour mesurer le temps d'exécution de la recherche, car nous comparerons cette recherche sans index avec une recherche avec index, que nous créerons par la suite.  
+
+Pour rendre l'exécution reproductible, nous supprimons le fichier `vector_db.db` à la fin de l'exécution du script. N'hésitez pas à ajouter une seed pour rendre l'exécution idempotente.
+
+```python
+# main_sqlite.py
+
+import logging
+import shutil
+import numpy as np
+from simple_vector_db.vector_db_sqlite import VectorDBSQLite
+from utils.flex_logging import stream_handler
+from utils.timing import timeit
 
 
+logger = logging.getLogger(__name__)
+logger.addHandler(stream_handler)
+logger.setLevel(logging.INFO)
+
+DB_FILENAME = "vector_db.db"
+vector_db = VectorDBSQLite(db_filename=DB_FILENAME)
+
+N_VECTORS = 1000
+VECTORS_SHAPE = (1, 3)
+QUERY_VECTOR = np.array([0.15, 0.25, 0.35])
+K_SIMILAR_VECTORS = 5
+
+def insert_vectors(n_vectors: int, vectors_shape: tuple[int, int]) -> None:
+    vectors_to_insert = [np.random.rand(*vectors_shape) for _ in range(n_vectors)]
+    vector_db.insert(vectors_to_insert)
+
+@timeit
+def perform_search_without_index():
+    similar_vectors = vector_db.search_without_index(QUERY_VECTOR, k=K_SIMILAR_VECTORS)
+    logger.info(f"Most {K_SIMILAR_VECTORS} Similar vectors: {similar_vectors}")
+
+if __name__ == "__main__":
+    insert_vectors(N_VECTORS, VECTORS_SHAPE)
+    perform_search_without_index()
+    shutil.os.remove(DB_FILENAME)
+```
+
+Vous pouvez désormais lancer le script et voir le temps d'exécution de la recherche sans index. N'hésitez pas à changer les valeurs du vecteur de requête, les dimensions, le nombre de vecteurs similaires à retourner, etc.
