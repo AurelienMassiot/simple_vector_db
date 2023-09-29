@@ -5,9 +5,9 @@ import shutil
 import pytest
 
 sample_vectors = [
-    np.array([0.1, 0.1, 0.1]),
+    np.array([10, 0.1, 0.1]),
     np.array([0.11, 0.11, 0.11]),
-    np.array([0.115, 0.115, 0.115]),
+    np.array([0.115, 0.115, 11]),
 ]
 
 
@@ -30,7 +30,7 @@ def test_data_set_creation():
     ds = Dataset(sample_vectors, k=1)
     # then
     assert ds.ids == [0, 1, 2]
-    expected_knn = {0: [1], 1: [2], 2: [1]}
+    expected_knn = {0: [0,1], 1: [1,2], 2: [2,1]}
     for id_vect in ds.ids_to_brute_knn.keys():
         assert ds.ids_to_brute_knn[id_vect] == expected_knn[id_vect]
 
@@ -48,10 +48,11 @@ def test_evaluator_query_with_all_vectors(vector_db, dataset):
 
 def test_evaluator_compute_recall_on_results(vector_db):
     # given
-    eval = VectorDBEvaluator(vector_db, dataset)
     ds = Dataset(sample_vectors, k=2)
+    eval = VectorDBEvaluator(vector_db, ds)
+
     # when
     results = eval.query_with_all_vectors(k=3)
-    map = eval.compute_map_on_results(results)
+    map = eval.compute_recall_on_results(results)
 
     assert map == 1.0
