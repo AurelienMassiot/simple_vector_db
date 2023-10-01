@@ -6,7 +6,7 @@ from utils.flex_logging import stream_handler
 
 logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 class Dataset:
     def __init__(self, vectors, k):
@@ -28,7 +28,7 @@ class Dataset:
             self.ids_to_brute_knn[currid] = reel_knn
 
     def init_brute_force_knn(self):
-        brute_knn = NearestNeighbors(n_neighbors=self.k + 1, algorithm="brute", metric='cosine')
+        brute_knn = NearestNeighbors(n_neighbors=self.k + 1, algorithm="brute", metric='euclidean')
         brute_knn.fit(self.vectors)
         self.brute_knn = brute_knn
 
@@ -63,7 +63,7 @@ class VectorDBEvaluator:
 
             recall = len(set(real_knn).intersection(pred_knn)) / len(pred_knn)
             if recall < 1:
-                logger.debug(real_knn, "/", pred_knn)
+                logger.debug(str(real_knn)+ " / "+ str(pred_knn))
                 logger.debug(results[query_id])
             total_recall += recall
         return total_recall / len(results)
