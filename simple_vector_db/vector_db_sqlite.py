@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, Column, Integer
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from simple_vector_db.distances import cosine_similarity
+from simple_vector_db.distances import cosine_similarity, euclidean_distance
 from simple_vector_db.numpy_array_adapter import NumpyArrayAdapter
 
 Base = declarative_base()
@@ -63,6 +63,15 @@ class VectorDBSQLite:
         Base.metadata.create_all(self.engine)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
+        self.metric = {"metric": cosine_similarity, "reverse_sort": True}
+
+    def set_metric(self, metric_name: str = "cosine"):
+        if metric_name == "cosine":
+            self.metric["metric"] = cosine_similarity
+            self.metric["reverse_sort"] = True
+        elif metric_name == "euclidean":
+            self.metric["metric"] = euclidean_distance
+            self.metric["reverse_sort"] = False
 
     def insert(self, vectors: list[np.ndarray], vector_ids: list[int] = None) -> None:
         vector_objects = [Vector(data=array) for array in vectors]
@@ -87,10 +96,10 @@ class VectorDBSQLite:
         vectors = self.session.query(Vector).all()
 
         similarities = [
-            (vector.id, cosine_similarity(query_vector, vector.data))
+            (vector.id, self.metric["metric"](query_vector, vector.data))
             for vector in vectors
         ]
-        similarities.sort(key=lambda x: x[1], reverse=True)
+        similarities.sort(key=lambda x: x[1], reverse=self.metric["reverse_sort"])
         top_similarities = similarities[:k]
 
         return top_similarities
@@ -130,21 +139,21 @@ class VectorDBSQLite:
         )
 
         similarities = [
-            (indexed_vector.id, cosine_similarity(query_vector, indexed_vector.data))
+            (indexed_vector.id, self.metric["metric"](query_vector, indexed_vector.data))
             for indexed_vector in indexed_vectors
         ]
 
-        similarities.sort(key=lambda x: x[1], reverse=True)
+        similarities.sort(key=lambda x: x[1], reverse=self.metric["reverse_sort"])
         most_similar_vectors = similarities[:k]
 
         return most_similar_vectors, most_similar_centroid_id
 
     def find_most_similar_centroid(self, query_vector, centroids) -> int:
         centroid_similarities = [
-            (centroid.id, cosine_similarity(query_vector, centroid.data))
+            (centroid.id, self.metric["metric"](query_vector, centroid.data))
             for centroid in centroids
         ]
-        centroid_similarities.sort(key=lambda x: x[1], reverse=True)
+        centroid_similarities.sort(key=lambda x: x[1], reverse=self.metric["reverse_sort"])
         most_similar_centroid_id = centroid_similarities[0][0]
         return most_similar_centroid_id
 
