@@ -17,11 +17,15 @@ class VectorQuantizer:
         self.k_centroids = k_centroids
         self.nb_subspace_centroids = int(k_centroids / m_chunks)
         self.codebook: Dict[str, int] = {}
+        #TODO rajouter typage output fonctions
 
     def split_vector_into_chunks(self, input_vector: np.array):
         vector_dimension = input_vector.shape[0]
+        #TODO design chelou car on valide qqchose qui est pas défini dans cette fonction
+        #code défensif / défendre contre l'humain.
         if vector_dimension % self.m_chunks != 0:
-            logger.error(f"The vector's dimension {vector_dimension} is not divisible by {self.m_chunks}")
+            raise Exception(f"The vector's dimension {vector_dimension} is not divisible by {self.m_chunks}")
+            #logger.error(f"The vector's dimension {vector_dimension} is not divisible by {self.m_chunks}")
         chunck_dimension = int(vector_dimension / self.m_chunks)
         chunks = [input_vector[ch * chunck_dimension:(ch + 1) * chunck_dimension] for ch in range(self.m_chunks)]
         return chunks
@@ -40,14 +44,17 @@ class VectorQuantizer:
     def quantize_vectors(self, input_vectors: list[np.array]):
         input_vectors_matrix = np.array(input_vectors)
         vector_dimension = input_vectors[0].shape[0]
+        #TODO pourquoi je revalide la taille m_chunks
         if vector_dimension % self.m_chunks != 0:
             logger.error(f"The vector's dimension {vector_dimension} is not divisible by {self.m_chunks}")
         chunks = np.split(input_vectors_matrix, self.m_chunks, axis=1)
-        quantized_vector = []
+        #TODO ca s'appelle une liste compréhension
+        quantized_vector = [self.compute_clusters_on_subspace(chunk,i) for i,chunk in enumerate(chunks)]
         for i, chunk in enumerate(chunks):
-            centroids, predicted_clusters, codebook_labels = self.compute_clusters_on_subspace(chunk, i)
+            #TODO remplacer les retours non utilisés par de _
+            _, predicted_clusters, _ = self.compute_clusters_on_subspace(chunk, i)
             quantized_vector.append(predicted_clusters)
-
+        #TODO pourquoi je renvoie pas une liste de np.arrays
         return np.array(quantized_vector).T
 
     def rebuild_vector(self, input_vector: np.array):
