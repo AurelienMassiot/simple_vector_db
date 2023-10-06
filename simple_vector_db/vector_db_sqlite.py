@@ -23,6 +23,7 @@ class Vector(Base):
         self.data = data
 
 
+
 class Mapping(Base):
     __tablename__ = "id_map"
 
