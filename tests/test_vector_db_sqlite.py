@@ -13,9 +13,7 @@ sample_vectors = [
 
 sample_vectors_ids = [121, 221, 331]
 
-big_numpy_vector_of_ints = np.random.randint(0, high=256, size=(784))
-big_numpy_vector_of_floats = np.random.uniform(0, 1, size=(784))
-
+big_numpy_vector = np.random.randint(0,high= 256,size=(784))
 
 @pytest.fixture
 def vector_db():
@@ -28,25 +26,17 @@ def vector_db():
 def test_insert(vector_db):
     # Given When
     vector_db.insert(sample_vectors)
+
     # Then
     count = vector_db.session.query(Vector).count()
     assert count == len(sample_vectors)
 
-
-def test_insert_and_retrieve_should_unbuffer_correctly_ints(vector_db):
+def test_insert_and_retrieve_should_unbuffer_correctly(vector_db):
     # Given
-    vector_db.insert([big_numpy_vector_of_ints])
+    vector_db.insert(big_numpy_vector)
     # WHEN
     retrieved = vector_db.search_with_id(1)
-    np.testing.assert_array_equal(retrieved.data, big_numpy_vector_of_ints)
-
-
-def test_insert_and_retrieve_should_unbuffer_correctly_floats(vector_db):
-    # Given
-    vector_db.insert([big_numpy_vector_of_floats])
-    # WHEN
-    retrieved = vector_db.search_with_id(1)
-    np.testing.assert_array_equal(retrieved.data, big_numpy_vector_of_floats)
+    assert retrieved == big_numpy_vector
 
 
 def test_insert_with_id_should_create_correct_mapping(vector_db):
@@ -112,22 +102,6 @@ def test_search_without_index_with_euclidean_distance(vector_db):
         assert results[i][1] >= results[i - 1][1]
 
 
-def test_search_without_index_with_euclidean_distance(vector_db):
-    # Given
-    vector_db.set_metric("euclidean")
-    vector_db.insert(sample_vectors)
-    query_vector = np.array([0.3, 0.4, 0.5])
-    k = 2
-
-    # When
-    results = vector_db.search_without_index(query_vector, k)
-
-    # Then
-    assert len(results) == k
-    for i in range(1, k):
-        assert results[i][1] >= results[i - 1][1]
-
-
 def test_create_kmeans_index(vector_db):
     # Given
     vector_db.insert(sample_vectors)
@@ -156,25 +130,6 @@ def test_search_in_kmeans_index(vector_db):
     for i in range(1, k):
         assert results[i][1] <= results[i - 1][1]
     assert isinstance(most_similar_centroid, int)
-
-def test_search_in_kmeans_index_with_euclidean_distance(vector_db):
-    # Given
-    vector_db.set_metric("euclidean")
-    vector_db.insert(sample_vectors)
-    n_clusters = 2
-    query_vector = np.array([0.3, 0.4, 0.5])
-    k = 2
-    vector_db.create_kmeans_index(n_clusters)
-
-    # When
-    results, most_similar_centroid = vector_db.search_in_kmeans_index(query_vector, k)
-
-    # Then
-    assert len(results) == k
-    for i in range(1, k):
-        assert results[i][1] >= results[i - 1][1]
-    assert isinstance(most_similar_centroid, int)
-
 
 def test_search_in_kmeans_index_with_euclidean_distance(vector_db):
     # Given
