@@ -37,7 +37,6 @@ def test_data_set_creation():
 
 def test_evaluator_query_with_all_vectors(vector_db, dataset):
     # given
-    query_vector = np.array([0.1, 0.2, 0.3])
     # when
     eval = VectorDBEvaluator(vector_db, dataset)
     # then
