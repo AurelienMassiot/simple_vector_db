@@ -96,6 +96,7 @@ def test_search_without_index(vector_db):
     for i in range(1, k):
         assert results[i][1] <= results[i - 1][1]
 
+
 def test_search_without_index_with_euclidean_distance(vector_db):
     # Given
     vector_db.set_metric("euclidean")
@@ -156,6 +157,7 @@ def test_search_in_kmeans_index(vector_db):
     for i in range(1, k):
         assert results[i][1] <= results[i - 1][1]
     assert isinstance(most_similar_centroid, list)
+
 
 def test_search_in_kmeans_index_with_euclidean_distance(vector_db):
     # Given
