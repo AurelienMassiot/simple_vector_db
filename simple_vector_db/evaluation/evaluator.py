@@ -7,6 +7,7 @@ from utils.flex_logging import stream_handler
 logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
 logger.setLevel(logging.DEBUG)
+import time
 
 
 class Dataset:
@@ -33,10 +34,9 @@ class Dataset:
             self.ids_to_brute_knn[currid] = reel_knn
             self.ids_to_distance_brute_knn[currid] = reel_distances
 
-   # @staticmethod
-   # def format_knn_results(knn_result: np.array()) -> dict:
-   #     pass
-
+    # @staticmethod
+    # def format_knn_results(knn_result: np.array()) -> dict:
+    #     pass
 
     def init_brute_force_knn(self):
         # TODO bouger ce code dans la fonction dans celle du dessus
@@ -63,6 +63,16 @@ class VectorDBEvaluator:
         results = []
         for vector in self.bench_dataset.vectors:
             results.append(self.vector_db.search_without_index(vector, k + 1))
+
+        return results
+
+    def set_kmeans_index(self, nb_clusters: int):
+        self.vector_db.create_kmeans_index(nb_clusters)
+
+    def query_with_all_vectors_kmeans_index(self, k: int):
+        results = []
+        for vector in self.bench_dataset.vectors:
+            results.append(self.vector_db.search_in_kmeans_index(vector, k + 1)[0])
         return results
 
     def compute_recall_on_results(self, results):
@@ -78,10 +88,7 @@ class VectorDBEvaluator:
             # real_knn.sort()
             # pred_knn.sort()
             # TODO mettre dans une variable pour que ca soit lisible
-            recall = len(set(real_knn).intersection(pred_knn)) / len(pred_knn)
-            # TODO ne pas laisser ou alors enlever le if
-            if recall < 1:
-                logger.debug(str(real_knn) + "/" + str(real_distance) + " / " + str(pred_knn))
-                logger.debug(results[query_id])
+            intersection = set(real_knn).intersection(pred_knn)
+            recall = len(intersection) / len(pred_knn)
             total_recall += recall
         return total_recall / len(results)
