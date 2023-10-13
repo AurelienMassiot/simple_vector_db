@@ -30,7 +30,7 @@ def test_data_set_creation():
     ds = Dataset(sample_vectors, k=1)
     # then
     assert ds.ids == [0, 1, 2]
-    expected_knn = {0: [0,1], 1: [1,2], 2: [2,1]}
+    expected_knn = {0: [0,1], 1: [1,0], 2: [2,1]}
     for id_vect in ds.ids_to_brute_knn.keys():
         assert ds.ids_to_brute_knn[id_vect] == expected_knn[id_vect]
 

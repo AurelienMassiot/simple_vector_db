@@ -30,13 +30,12 @@ class Dataset:
             res_knn = self.brute_knn.kneighbors(self.vectors[currid].reshape(1, -1), return_distance=True)
             reel_distances = res_knn[0][0]
             reel_knn = list(res_knn[1][0])
-            print(res_knn)
             self.ids_to_brute_knn[currid] = reel_knn
             self.ids_to_distance_brute_knn[currid] = reel_distances
 
-    @staticmethod
-    def format_knn_results(knn_result: np.array()) -> dict:
-        pass
+   # @staticmethod
+   # def format_knn_results(knn_result: np.array()) -> dict:
+   #     pass
 
 
     def init_brute_force_knn(self):
