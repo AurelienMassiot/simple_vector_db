@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 
 def cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
@@ -9,4 +10,4 @@ def cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
 
 
 def euclidean_distance(v1: np.ndarray, v2: np.ndarray) -> float:
-    return np.linalg.norm(v1 - v2)
+    return math.dist(v1, v2)
