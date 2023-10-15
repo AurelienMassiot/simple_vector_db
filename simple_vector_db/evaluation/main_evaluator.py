@@ -73,6 +73,5 @@ if __name__ == "__main__":
         results_bench.append({"nb_clusters": nb_clusters, "k": k, "recall": recall, "total_time": time_total,
                         "nb_requests_per_second": int(len(images) / time_total)})
         logger.info("Recall is " + str(recall))
-        print(results_bench)
-    results_bench = pd.DataFrame(results_bench)
-    results_bench.to_csv("figures/bench_results_kmeans.csv")
+        results_bench_df = pd.DataFrame(results_bench)
+        results_bench_df.to_csv("figures/bench_results_kmeans.csv")
