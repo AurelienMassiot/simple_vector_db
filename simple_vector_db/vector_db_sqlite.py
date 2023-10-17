@@ -23,7 +23,6 @@ class Vector(Base):
         self.data = data
 
 
-
 class Mapping(Base):
     __tablename__ = "id_map"
 
@@ -125,19 +124,18 @@ class VectorDBSQLite:
         return centroids
 
     def search_in_kmeans_index(
-            self, query_vector: np.ndarray, k: int
+            self, query_vector: np.ndarray, k: int, n_probes=1
     ) -> Tuple[List[Tuple[int, float]], int]:
         centroids = self.session.query(Centroid).all()
         most_similar_centroid_id = self.find_most_similar_centroid(
-            query_vector, centroids
+            query_vector, centroids, n_probes=n_probes
         )
 
         indexed_vectors = (
             self.session.query(IndexedVector)
-            .filter_by(cluster=most_similar_centroid_id)
+            .filter(IndexedVector.cluster.in_(most_similar_centroid_id))
             .all()
         )
-
         similarities = [
             (indexed_vector.id, self.metric["metric"](query_vector, indexed_vector.data))
             for indexed_vector in indexed_vectors
@@ -148,14 +146,19 @@ class VectorDBSQLite:
 
         return most_similar_vectors, most_similar_centroid_id
 
-    def find_most_similar_centroid(self, query_vector, centroids) -> int:
+    def find_most_similar_centroid(self, query_vector, centroids, n_probes=1) -> list:
         centroid_similarities = [
             (centroid.id, self.metric["metric"](query_vector, centroid.data))
             for centroid in centroids
         ]
         centroid_similarities.sort(key=lambda x: x[1], reverse=self.metric["reverse_sort"])
-        most_similar_centroid_id = centroid_similarities[0][0]
-        return most_similar_centroid_id
+        most_similar_centroid_ids = self.subset_most_similar_centroids(centroid_similarities,n_probes=n_probes)
+        return most_similar_centroid_ids
+
+    @staticmethod
+    def subset_most_similar_centroids(centroids_similarities, n_probes=1):
+        most_similar_centroid_ids = [tuple[0] for tuple in centroids_similarities[:n_probes]]
+        return most_similar_centroid_ids
 
     def insert_centroids(self, centroids) -> None:
         centroid_objects = [
