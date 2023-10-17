@@ -69,10 +69,10 @@ class VectorDBEvaluator:
     def set_kmeans_index(self, nb_clusters: int):
         self.vector_db.create_kmeans_index(nb_clusters)
 
-    def query_with_all_vectors_kmeans_index(self, k: int):
+    def query_with_all_vectors_kmeans_index(self, k: int, n_probes=1):
         results = []
         for vector in self.bench_dataset.vectors:
-            results.append(self.vector_db.search_in_kmeans_index(vector, k + 1)[0])
+            results.append(self.vector_db.search_in_kmeans_index(vector, k + 1, n_probes=n_probes)[0])
         return results
 
     def compute_recall_on_results(self, results):

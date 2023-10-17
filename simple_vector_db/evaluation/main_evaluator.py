@@ -53,25 +53,26 @@ def prepare_sql_db():
 
 if __name__ == "__main__":
     remove_sqlite_file()
-    images = load_fashion_mnist(n_sample=5000)
+    images = load_fashion_mnist(n_sample=500)
     logger.info("Loaded Dataset")
     logger.info("Initiated Vector DB")
     results_bench = []
     for nb_clusters in range(2, 256):
-        vector_db = prepare_sql_db()
-        k = 50
-        ds = Dataset(images, k=k)
-        eval = VectorDBEvaluator(vector_db, ds)
-        eval.set_kmeans_index(nb_clusters)
-        logger.info("Created evaluation Dataset")
-        time_start = time.time()
-        results = eval.query_with_all_vectors_kmeans_index(k=k)
-        time_end = time.time()
-        time_total = time_end - time_start
-        logger.info("Queried vector db with all data in" + str(time_total))
-        recall = eval.compute_recall_on_results(results)
-        results_bench.append({"nb_clusters": nb_clusters, "k": k, "recall": recall, "total_time": time_total,
-                        "nb_requests_per_second": int(len(images) / time_total)})
-        logger.info("Recall is " + str(recall))
-        results_bench_df = pd.DataFrame(results_bench)
-        results_bench_df.to_csv("figures/bench_results_kmeans.csv")
+        for n_probes in range(1, 5):
+            vector_db = prepare_sql_db()
+            k = 10
+            ds = Dataset(images, k=k)
+            eval = VectorDBEvaluator(vector_db, ds)
+            eval.set_kmeans_index(nb_clusters)
+            logger.info("Created evaluation Dataset")
+            time_start = time.time()
+            results = eval.query_with_all_vectors_kmeans_index(k=k, n_probes=n_probes)
+            time_end = time.time()
+            time_total = time_end - time_start
+            recall = eval.compute_recall_on_results(results)
+            row_results = {"nb_clusters": nb_clusters, "n_probes": n_probes, "k": k, "recall": recall, "total_time": time_total,
+                 "nb_requests_per_second": int(len(images) / time_total)}
+            results_bench.append(row_results)
+            logger.info(row_results)
+            results_bench_df = pd.DataFrame(results_bench)
+            results_bench_df.to_csv("figures/bench_results_kmeans.csv")
