@@ -53,12 +53,12 @@ def prepare_sql_db():
 
 if __name__ == "__main__":
     remove_sqlite_file()
-    images = load_fashion_mnist(n_sample=500)
+    images = load_fashion_mnist(n_sample=2000)
     logger.info("Loaded Dataset")
     logger.info("Initiated Vector DB")
     results_bench = []
-    for nb_clusters in range(2, 256):
-        for n_probes in range(1, 5):
+    for nb_clusters in range(2, 256,10):
+        for n_probes in range(1, 10,2):
             vector_db = prepare_sql_db()
             k = 10
             ds = Dataset(images, k=k)
