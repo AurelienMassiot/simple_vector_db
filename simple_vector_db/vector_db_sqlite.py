@@ -178,3 +178,5 @@ class VectorDBSQLite:
         ]
         self.session.add_all(indexed_vector_objects)
         self.session.commit()
+
+
