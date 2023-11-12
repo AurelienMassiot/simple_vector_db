@@ -108,14 +108,43 @@ def test_rebuild_vector_should_return_vector_correct_shape(sample_high_d_vectors
     assert rebuilt_vector.shape == expected_shape
 
 
-def test_distance_chunk_centroids_should_return_an_array_with_distances():
+def test_distance_chunk_centroids_should_return_a_dict_with_distances():
     # GIVEN
     codebook_subspace_0 = {0: np.array([0.7, 0.8, 0.9]), 1: np.array([0.7, 0.8, 0.9])}
     query_vector_chunk = np.array([0.7, 0.8, 0.9])
     # WHEN
     calculated_dist = VectorQuantizer.distance_chunk_centroids(query_vector_chunk, codebook_subspace_0)
     # THEN
-    np.testing.assert_array_equal(calculated_dist, np.array([0, 0]))
+    np.testing.assert_array_equal(calculated_dist, {0: 0, 1: 0})
+
+
+def test_compute_assymetric_distance_matrix_should_return_a_distance_matrix():
+    # GIVEN
+    quantizer = VectorQuantizer(m_chunks=2, nb_subspace_centroids=2)
+    codebook_subspace_0 = {0: np.array([0.7, 0.8, 0.9]), 1: np.array([0.7, 0.8, 0.9])}
+    codebook_subspace_1 = {0: np.array([0.7, 0.8, 0.9]), 1: np.array([0.7, 0.8, 0.9])}
+    quantizer.codebook = {0: codebook_subspace_0, 1: codebook_subspace_1}
+    query_vector = np.array([0.7, 0.8, 0.9, 0.7, 0.8, 0.9])
+    # WHEN
+    quantizer.compute_assymetric_distance_matrix(query_vector)
+    calculated_matrix = quantizer.distance_matrix
+    # THEN
+    expected_matrix = {0: {0: 0, 1: 0}, 1: {0: 0, 1: 0}}
+    assert calculated_matrix == expected_matrix
+
+
+def test_compute_distances_for_all_vectors_should_return_distance_list():
+    # GIVEN
+    distance_matrix = {0: {0: 0.2, 1: 0.6}, 1: {0: 0.7, 1: 0.2}}
+    quantized_vectors = [np.array([0, 0]), np.array([1, 0])]
+    quantizer = VectorQuantizer(m_chunks=2, nb_subspace_centroids=2)
+    quantizer.distance_matrix = distance_matrix
+    expected_distances = [0.2 + 0.7, 0.7 + 0.6]
+    # WHEN
+    calculated_distances = quantizer.compute_distances_for_all_vectors(quantized_vectors)
+    # THEN
+    print(calculated_distances)
+    assert calculated_distances == expected_distances
 
 
 if __name__ == "__main__":
