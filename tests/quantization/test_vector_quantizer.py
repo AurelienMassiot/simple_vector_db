@@ -126,8 +126,7 @@ def test_compute_assymetric_distance_matrix_should_return_a_distance_matrix():
     quantizer.codebook = {0: codebook_subspace_0, 1: codebook_subspace_1}
     query_vector = np.array([0.7, 0.8, 0.9, 0.7, 0.8, 0.9])
     # WHEN
-    quantizer.compute_assymetric_distance_matrix(query_vector)
-    calculated_matrix = quantizer.distance_matrix
+    calculated_matrix = quantizer.compute_assymetric_distance_matrix(query_vector)
     # THEN
     expected_matrix = {0: {0: 0, 1: 0}, 1: {0: 0, 1: 0}}
     assert calculated_matrix == expected_matrix
@@ -138,10 +137,9 @@ def test_compute_distances_for_all_vectors_should_return_distance_list():
     distance_matrix = {0: {0: 0.2, 1: 0.6}, 1: {0: 0.7, 1: 0.2}}
     quantized_vectors = [np.array([0, 0]), np.array([1, 0])]
     quantizer = VectorQuantizer(m_chunks=2, nb_subspace_centroids=2)
-    quantizer.distance_matrix = distance_matrix
     expected_distances = [0.2 + 0.7, 0.7 + 0.6]
     # WHEN
-    calculated_distances = quantizer.compute_distances_for_all_vectors(quantized_vectors)
+    calculated_distances = quantizer.compute_distances_for_all_vectors(distance_matrix,quantized_vectors)
     # THEN
     print(calculated_distances)
     assert calculated_distances == expected_distances

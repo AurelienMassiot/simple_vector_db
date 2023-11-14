@@ -14,7 +14,6 @@ logger.setLevel(LOGGING_LEVEL)
 class VectorQuantizer:
 
     def __init__(self, m_chunks: int, nb_subspace_centroids: int):
-        self.distance_matrix = None
         self.m_chunks = m_chunks
         self.nb_subspace_centroids = nb_subspace_centroids
         self.codebook: Dict[int, dict[int, np.array]] = {}
@@ -62,12 +61,13 @@ class VectorQuantizer:
         chunks = self.split_vector_into_chunks(query_vector)
         distance_matrix = {subspace_index: self.distance_chunk_centroids(chunk, self.codebook[subspace_index]) for
                            subspace_index, chunk in enumerate(chunks)}
-        self.distance_matrix = distance_matrix
+        return distance_matrix
 
-    def compute_distances_for_all_vectors(self, quantized_vectors: list[np.array]):
+    def compute_distances_for_all_vectors(self, distance_matrix: dict[int, dict], quantized_vectors: list[np.array]):
         distance_list = []
         for vector in quantized_vectors:
-            subspace_distances = np.array([self.distance_matrix[subspace_id][cluster_id] for subspace_id,cluster_id in enumerate(vector)])
+            subspace_distances = np.array(
+                [distance_matrix[subspace_id][cluster_id] for subspace_id, cluster_id in enumerate(vector)])
             distance_list.append(subspace_distances.sum())
         return distance_list
 
