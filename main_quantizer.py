@@ -30,6 +30,7 @@ def perform_quantization():
     compression_mse = mean_squared_error(query_vector, rebuilt_vector)
     logger.info(f"Mean squared error of compression for first vector {compression_mse}")
     knn = find_knn_with_quantization(query_vector, quantizer, quantized_vectors)
+    logger.info("Knn results:"+str(knn))
     logger.info(f'Label for the query vector is {labels[idx_query_vector]}')
     nn_ids = [tuple[1] for tuple in knn]
     nn_labels = labels[nn_ids]
@@ -41,7 +42,8 @@ def find_knn_with_quantization(query_vector: np.array, quantizer: VectorQuantize
     distance_matrix = quantizer.compute_assymetric_distance_matrix(query_vector)
     distances = quantizer.compute_distances_for_all_vectors(distance_matrix, quantized_vectors)
     distances_ids = list(zip(distances, range(len(distances))))
-    return sorted(distances_ids[0:k])
+    distances_ids = sorted(distances_ids[0:k], key=lambda x: x[0])
+    return distances_ids
 
 
 if __name__ == "__main__":
