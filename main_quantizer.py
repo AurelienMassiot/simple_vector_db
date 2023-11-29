@@ -41,8 +41,8 @@ def find_knn_with_quantization(query_vector: np.array, quantizer: VectorQuantize
                                quantized_vectors: list[np.array], k: int = 20):
     distance_matrix = quantizer.compute_assymetric_distance_matrix(query_vector)
     distances = quantizer.compute_distances_for_all_vectors(distance_matrix, quantized_vectors)
-    distances_ids = list(zip(distances, range(len(distances))))
-    distances_ids = sorted(distances_ids[0:k], key=lambda x: x[0])
+    distances_ids = sorted(list(zip(distances, range(len(distances)))), key=lambda x: x[0])
+    distances_ids = distances_ids[0:k]
     return distances_ids
 
 
