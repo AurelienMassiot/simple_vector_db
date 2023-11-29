@@ -1,13 +1,14 @@
-import numpy as np
-from simple_vector_db.vector_db import VectorDB
-from sklearn.neighbors import NearestNeighbors
 import logging
+
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+
+from simple_vector_db.vector_db import VectorDB
 from utils.flex_logging import stream_handler
 
 logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
 logger.setLevel(logging.DEBUG)
-import time
 
 
 class Dataset:

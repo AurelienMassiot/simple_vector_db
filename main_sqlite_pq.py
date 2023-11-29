@@ -27,10 +27,10 @@ def clean_sqlite_file_if_exists():
 def perform_query_on_quantized_db():
     vectordbPQ = VectorDBSQLitePQ(DB_FILENAME, m_chunks=M_CHUNKS, nb_subspace_centroids=N_CENTROIDS)
     vectors_to_quantize = load_digits().data
-    vectordbPQ.insert_pq(vectors_to_quantize, list(range(0, len(vectors_to_quantize))))
+    vectordbPQ.insert(vectors_to_quantize, list(range(0, len(vectors_to_quantize))))
     idx_query_vector = 11
     query_vector = vectors_to_quantize[idx_query_vector]
-    results = vectordbPQ.search_with_pq(query_vector, k=K_SIMILAR_VECTORS)
+    results = vectordbPQ.search_without_index(query_vector, k=K_SIMILAR_VECTORS)
     logger.info("Results Vector are:" + str(results))
 
 

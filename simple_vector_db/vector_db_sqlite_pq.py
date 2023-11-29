@@ -10,11 +10,11 @@ class VectorDBSQLitePQ(VectorDBSQLite):
         super(VectorDBSQLitePQ, self).__init__(db_filename)
         self.db_quantizer = VectorQuantizer(m_chunks, nb_subspace_centroids)
 
-    def insert_pq(self, vectors: list[np.ndarray], vector_ids: list[int] = None):
+    def insert(self, vectors: list[np.ndarray], vector_ids: list[int] = None):
         quantized_vectors: list[np.ndarray] = self.db_quantizer.quantize_vectors(vectors)
-        self.insert(quantized_vectors, vector_ids)
+        super().insert(quantized_vectors, vector_ids)
 
-    def search_with_pq(self, query_vector: np.ndarray, k: int):
+    def search_without_index(self, query_vector: np.ndarray, k: int):
         quantized_vectors = self.session.query(Vector).all()
         quantized_vectors_data = [vec.data for vec in quantized_vectors]
         quantized_vectors_ids = [vec.id for vec in quantized_vectors]
