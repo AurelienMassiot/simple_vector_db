@@ -113,6 +113,22 @@ def test_search_without_index_with_euclidean_distance(vector_db):
         assert results[i][1] >= results[i - 1][1]
 
 
+def test_search_without_index_with_euclidean_distance(vector_db):
+    # Given
+    vector_db.set_metric("euclidean")
+    vector_db.insert(sample_vectors)
+    query_vector = np.array([0.3, 0.4, 0.5])
+    k = 2
+
+    # When
+    results = vector_db.search_without_index(query_vector, k)
+
+    # Then
+    assert len(results) == k
+    for i in range(1, k):
+        assert results[i][1] >= results[i - 1][1]
+
+
 def test_create_kmeans_index(vector_db):
     # Given
     vector_db.insert(sample_vectors)
@@ -141,6 +157,25 @@ def test_search_in_kmeans_index(vector_db):
     for i in range(1, k):
         assert results[i][1] <= results[i - 1][1]
     assert isinstance(most_similar_centroid, list)
+
+
+def test_search_in_kmeans_index_with_euclidean_distance(vector_db):
+    # Given
+    vector_db.set_metric("euclidean")
+    vector_db.insert(sample_vectors)
+    n_clusters = 2
+    query_vector = np.array([0.3, 0.4, 0.5])
+    k = 2
+    vector_db.create_kmeans_index(n_clusters)
+
+    # When
+    results, most_similar_centroid = vector_db.search_in_kmeans_index(query_vector, k)
+
+    # Then
+    assert len(results) == k
+    for i in range(1, k):
+        assert results[i][1] >= results[i - 1][1]
+    assert isinstance(most_similar_centroid, int)
 
 
 def test_search_in_kmeans_index_with_euclidean_distance(vector_db):
