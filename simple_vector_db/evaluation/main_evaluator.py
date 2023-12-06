@@ -53,11 +53,11 @@ def prepare_sql_db():
 
 if __name__ == "__main__":
     remove_sqlite_file()
-    images = load_fashion_mnist(n_sample=500)
+    images = load_fashion_mnist(n_sample=1000)
     logger.info("Loaded Dataset")
     logger.info("Initiated Vector DB")
     results_bench = []
-    for nb_clusters in range(2, 256):
+    for nb_clusters in range(2, 128):
         for n_probes in range(1, 5):
             vector_db = prepare_sql_db()
             k = 10
@@ -70,8 +70,8 @@ if __name__ == "__main__":
             time_end = time.time()
             time_total = time_end - time_start
             recall = eval.compute_recall_on_results(results)
-            row_results = {"nb_clusters": nb_clusters, "n_probes": n_probes, "k": k, "recall": recall, "total_time": time_total,
-                 "nb_requests_per_second": int(len(images) / time_total)}
+            row_results = {"Nombre de clusters": nb_clusters, "Valeur de n_probes": n_probes, "k": k, f"Rappel @ {k}": recall, "total_time": time_total,
+                 "Nombre de requêtes par seconde": int(len(images) / time_total)}
             results_bench.append(row_results)
             logger.info(row_results)
             results_bench_df = pd.DataFrame(results_bench)
