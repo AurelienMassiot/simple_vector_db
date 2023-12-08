@@ -11,6 +11,7 @@ from utils.flex_logging import stream_handler
 import dataget
 import numpy as np
 import time
+from utils import plotting
 
 logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
@@ -20,7 +21,6 @@ logger.setLevel(logging.DEBUG)
 def load_mnist_data():
     digits = load_digits().data
     random.shuffle(digits)
-    # digits = digits[0:100]
     return digits
 
 
@@ -57,8 +57,8 @@ if __name__ == "__main__":
     logger.info("Loaded Dataset")
     logger.info("Initiated Vector DB")
     results_bench = []
-    for nb_clusters in range(2, 128):
-        for n_probes in range(1, 5):
+    for nb_clusters in range(2, 3):
+        for n_probes in range(1, 4):
             vector_db = prepare_sql_db()
             k = 10
             ds = Dataset(images, k=k)
@@ -70,9 +70,15 @@ if __name__ == "__main__":
             time_end = time.time()
             time_total = time_end - time_start
             recall = eval.compute_recall_on_results(results)
-            row_results = {"Nombre de clusters": nb_clusters, "Valeur de n_probes": n_probes, "k": k, f"Rappel @ {k}": recall, "total_time": time_total,
-                 "Nombre de requêtes par seconde": int(len(images) / time_total)}
+            row_results = {"Nombre de clusters": nb_clusters, "Valeur de n_probes": n_probes, "k": k,
+                           f"Rappel @ {k}": recall, "total_time": time_total,
+                           "Nombre de requêtes par seconde": int(len(images) / time_total)}
             results_bench.append(row_results)
             logger.info(row_results)
             results_bench_df = pd.DataFrame(results_bench)
-            results_bench_df.to_csv("figures/bench_results_kmeans.csv")
+            results_bench_df.to_csv("./bench_results_ivf.csv")
+    plotting.plot_results(results_bench_df, y="Nombre de clusters", x="Rappel @ 10",path_to_save="bench_results_ivf_figure_A.png",
+                           hue="Valeur de n_probes")
+    plotting.plot_results(results_bench_df, y="Nombre de requêtes par seconde", x="Rappel @ 10",
+                          path_to_save="bench_results_ivf_figure_B.png",
+                          hue="Valeur de n_probes")

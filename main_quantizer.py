@@ -1,5 +1,5 @@
 import logging
-
+import pandas as pd
 import numpy as np
 from sklearn.datasets import load_digits
 from simple_vector_db.quantization.vector_quantizer import VectorQuantizer
@@ -22,8 +22,8 @@ def perform_quantization():
     query_vector = vectors_to_quantize[idx_query_vector]
     quantized_vectors = quantizer.quantize_vectors(vectors_to_quantize)
     logger.info(f"quantized vector (centroids ids): {quantized_vectors[idx_query_vector]}")
-    #codebook = quantizer.codebook
-    #logger.info(f"Current Codebook: {codebook}")
+    codebook = quantizer.codebook
+    logger.info(f"Current Codebook: {codebook}")
     logger.info(f"original vector: {query_vector}")
     rebuilt_vector = quantizer.rebuild_vector(quantized_vectors[idx_query_vector])
     logger.info(f"rebuilt vector: {rebuilt_vector}")

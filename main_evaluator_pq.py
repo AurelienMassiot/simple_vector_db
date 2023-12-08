@@ -11,6 +11,7 @@ from utils.flex_logging import stream_handler
 import dataget
 import numpy as np
 import time
+from utils import plotting
 
 logger = logging.getLogger(__name__)
 logger.addHandler(stream_handler)
@@ -53,14 +54,13 @@ def prepare_sql_db(m_chunks: int, n_centroids: int):
 
 if __name__ == "__main__":
     remove_sqlite_file()
-    images = load_fashion_mnist(n_sample=500)
+    images = load_fashion_mnist(n_sample=1000)
     logger.info("Loaded Dataset")
     logger.info("Initiated Vector DB")
     results_bench = []
     for m_chunks in range(2, 64, 2):
-        for n_centroids in range(2, 32, 2):
-
-            vector_db = prepare_sql_db(m_chunks=m_chunks,n_centroids=n_centroids)
+        for n_centroids in range(2, 100, 5):
+            vector_db = prepare_sql_db(m_chunks=m_chunks, n_centroids=n_centroids)
             k = 10
             ds = Dataset(images, k=k)
             try:
@@ -74,10 +74,15 @@ if __name__ == "__main__":
             time_end = time.time()
             time_total = time_end - time_start
             recall = eval.compute_recall_on_results(results)
-            row_results = {"Nombre de sections": m_chunks, "Nombre de centroïdes par section":n_centroids, "k": k, f"rappel @ {k}": recall,
+            row_results = {"Nombre de sections": m_chunks, "Nombre de centroïdes par section": n_centroids, "k": k,
+                           f"Rappel @ {k}": recall,
                            "total_time": time_total,
-                           "nb_requests_per_second": int(len(images) / time_total)}
+                           "Nombre de requêtes par seconde": int(len(images) / time_total)}
             results_bench.append(row_results)
             logger.info(row_results)
             results_bench_df = pd.DataFrame(results_bench)
-            results_bench_df.to_csv("figures/bench_results_pq.csv")
+            results_bench_df.to_csv("./bench_results_pq.csv")
+    plotting.plot_results(results_bench_df, x=f"Rappel @ {k}", y="Nombre de requêtes par seconde",
+                          path_to_save="bench_results_pq_figure_A.png", hue="Nombre de centroïdes par section")
+    plotting.plot_results(results_bench_df, x=f"Rappel @ {k}", y="Nombre de requêtes par seconde",
+                          path_to_save="bench_results_pq_figure_B.png", hue="Nombre de sections")

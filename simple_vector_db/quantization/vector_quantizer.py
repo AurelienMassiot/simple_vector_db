@@ -43,11 +43,7 @@ class VectorQuantizer:
         if vector_dimension % self.m_chunks != 0:
             logger.error(f"The vector's dimension {vector_dimension} is not divisible by {self.m_chunks}")
         chunks = np.split(input_vectors_matrix, self.m_chunks, axis=1)
-        quantized_vector = []
-        for i, chunk in enumerate(chunks):
-            centroids, predicted_clusters = self.compute_clusters_on_subspace(chunk, i)
-            quantized_vector.append(predicted_clusters)
-
+        quantized_vector = [self.compute_clusters_on_subspace(chunk, i)[1] for i, chunk in enumerate(chunks)]
         return np.array(quantized_vector).T
 
     def rebuild_vector(self, input_vector: np.array):
