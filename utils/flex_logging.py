@@ -22,5 +22,5 @@ class CustomFormatter(logging.Formatter):
 
 
 stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setLevel(logging.INFO)
+stream_handler.setLevel(logging.DEBUG)
 stream_handler.setFormatter(CustomFormatter())

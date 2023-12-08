@@ -94,7 +94,6 @@ class VectorDBSQLite:
             self, query_vector: np.ndarray, k: int
     ) -> List[Tuple[int, float]]:
         vectors = self.session.query(Vector).all()
-
         similarities = [
             (vector.id, self.metric["metric"](query_vector, vector.data))
             for vector in vectors
@@ -178,3 +177,5 @@ class VectorDBSQLite:
         ]
         self.session.add_all(indexed_vector_objects)
         self.session.commit()
+
+
