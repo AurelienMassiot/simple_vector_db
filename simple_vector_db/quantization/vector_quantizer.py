@@ -63,7 +63,7 @@ class VectorQuantizer:
         distance_list = []
         for vector in quantized_vectors:
             subspace_distances = np.array(
-                [distance_matrix[subspace_id][cluster_id] for subspace_id, cluster_id in enumerate(vector)])
+                [distance_matrix[int(subspace_id)][int(cluster_id)] for subspace_id, cluster_id in enumerate(vector)]) # casting in int because of a bug in numpy with float64
             distance_list.append(subspace_distances.sum())
         return distance_list
 
