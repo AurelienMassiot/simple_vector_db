@@ -12,10 +12,11 @@ Feedback Link: https://github.com/AurelienMassiot/simple_vector_db/issues/new
 
 Duration: 0:01:00
 
-L'objectif de ce TP est créer une simple base de données de vecteurs, comme décrit dans notre article <TODO>.
+L'objectif de ce TP est créer une simple base de données de vecteurs, comme décrit dans notre article ["Sous le capot des bases de données vectorielles"](https://blog.octo.com/sous-le-capot-des-bases-de-donnees-vectorielles-(vector-databases)).
+
 Bien évidemment, le but ici n'est pas de créer une base de données performante utilisable en production, mais plutôt de l'implémenter pas à pas pour en décortiquer chaque brique.  
 
-N'hésitez pas à vous référer à l'article pour mieux comprendre les concepts implémentés.  
+N'hésitez pas à vous référer à l'article pour mieux comprendre les concepts implémentés, ou à regarder le [repository complet](https://github.com/AurelienMassiot/simple_vector_db) pour voir l'implémentation finale.
 
 A noter que des tests unitaires ont été implémentés dans le repository, mais nous n'allons pas les recoder dans le TP. Libre à vous d'aller les voir sur la branche `main` et de les ajouter à votre implémentation ;-).  
 
